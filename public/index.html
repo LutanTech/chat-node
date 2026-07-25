@@ -617,28 +617,40 @@
         async function initiateCall(targetSocketId, callType = 'video') {
             const targetUser = onlineUsers.find(u => u.id === targetSocketId);
             if (!targetUser) return;
-
+        
             try {
                 acquireWakeLock();
                 activeCallPeerSocketId = targetSocketId;
-
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: callType === 'video'
-                });
-
+        
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                        video: callType === 'video'
+                    });
+                } catch (mediaErr) {
+                    if (callType === 'video' && (mediaErr.name === 'NotReadableError' || mediaErr.name === 'TrackStartError')) {
+                        localStream = await navigator.mediaDevices.getUserMedia({
+                            audio: true,
+                            video: false
+                        });
+                        callType = 'audio';
+                    } else {
+                        throw mediaErr;
+                    }
+                }
+        
                 document.getElementById('local-video').srcObject = localStream;
                 document.getElementById('call-peer-name').innerText = "Calling " + targetUser.name + "...";
                 document.getElementById('active-call-modal').classList.remove('hidden');
-
+        
                 peerConnection = new RTCPeerConnection(RTC_CONFIG);
-
+        
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
+        
                 peerConnection.ontrack = (event) => {
                     document.getElementById('remote-video').srcObject = event.streams[0];
                 };
-
+        
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate && socket) {
                         socket.emit('sendIceCandidate', {
@@ -647,10 +659,10 @@
                         });
                     }
                 };
-
+        
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
-
+        
                 if (socket) {
                     socket.emit('callUser', {
                         targetSocketId,
@@ -659,16 +671,14 @@
                         signal: offer
                     });
                 } else {
-                    // Demo fallback ring simulate
                     startCallTimer();
                 }
-
+        
             } catch(err) {
                 addSystemMessageUI("Microphone/Camera access notice: " + err.message);
                 endActiveCall();
             }
         }
-
         async function acceptIncomingCall() {
             stopRingtone();
             document.getElementById('incoming-call-modal').classList.add('hidden');
