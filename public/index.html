@@ -597,20 +597,16 @@
             setupDemoFallback();
         }
 
-        // Standalone UI Demo Simulation Mode if Socket.io server is offline or unavailable
         function setupDemoFallback() {
             const saved = loadSavedSession();
-            myUsername = saved ? saved.name : generateRandomName();
+            myUsername = ---';
             updateMyIdentityUI();
 
             onlineUsers = [
-                { id: 'usr-me', name: myUsername },
-                { id: 'usr-1', name: 'Falcon-9021' },
-                { id: 'usr-2', name: 'Jaguar-4412' },
-                { id: 'usr-3', name: 'Panda-1188' }
+
             ];
             renderOnlineUsers();
-            addSystemMessageUI("UI loaded in demo mode. Connect to backend server for live sockets.");
+            addSystemMessageUI("Connection error.");
         }
 
         async function initiateCall(targetSocketId, callType = 'video') {
