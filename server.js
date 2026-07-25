@@ -6,8 +6,6 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
-app.use(express.static(path.join(__dirname, "public")));
-
 const io = new Server(server, {
     cors: { origin: "*" },
     maxHttpBufferSize: 1e7 
@@ -31,6 +29,7 @@ function save(msg) {
     if (history.length > 100) history.shift();
 }
 
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -145,7 +144,7 @@ io.on("connection", (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 9000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
