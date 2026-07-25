@@ -681,6 +681,7 @@
         }
         async function acceptIncomingCall() {
             stopRingtone();
+            clearInterval(vibrationInterval)
             document.getElementById('incoming-call-modal').classList.add('hidden');
             if (!incomingCallData) return;
 
