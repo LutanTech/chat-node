@@ -363,17 +363,19 @@
 
         function triggerDeviceVibration() {
             if ("vibrate" in navigator) {
-                const pattern = [400, 800, 400, 400, 800];
-                const totalDuration = 7000;
-
+                const pattern = [400, 800, 400, 800, 400];
+                const totalDuration = pattern.reduce((a, b) => a + b, 0);
+        
                 navigator.vibrate(pattern);
-
                 const vibrationInterval = setInterval(() => {
                     navigator.vibrate(pattern);
                 }, totalDuration);
+        
+                setTimeout(() => {
+                    clearInterval(vibrationInterval);
+                }, 10000);
             }
         }
-
         function startRingtone() {
             if (!audioEnabled) return;
             stopRingtone();
