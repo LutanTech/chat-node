@@ -367,9 +367,10 @@
                 const totalDuration = pattern.reduce((a, b) => a + b, 0);
         
                 navigator.vibrate(pattern);
-                const vibrationInterval = setInterval(() => {
+                window.vibrationInterval = setInterval(() => {
                     navigator.vibrate(pattern);
                 }, totalDuration);
+                
         
                 setTimeout(() => {
                     clearInterval(vibrationInterval);
@@ -573,6 +574,7 @@
                 document.getElementById('call-peer-name').innerText = data.answererName;
                 document.getElementById('active-call-modal').classList.remove('hidden');
                 startCallTimer();
+                clearInterval(vibrationInterval);
                 if (data.signal && peerConnection) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.signal));
                 }
@@ -580,6 +582,7 @@
 
             socket.on('callRejected', (data) => {
                 addSystemMessageUI(data.byName + " declined your call.");
+                clearInterval(vibrationInterval);
                 endActiveCall();
             });
 
