@@ -359,9 +359,18 @@
             }
         }
 
+        
+
         function triggerDeviceVibration() {
             if ("vibrate" in navigator) {
-                navigator.vibrate([600, 300, 600, 300, 800]);
+                const pattern = [600, 300, 600, 300, 800];
+                const totalDuration = pattern.reduce((a, b) => a + b, 0);
+
+                navigator.vibrate(pattern);
+
+                const vibrationInterval = setInterval(() => {
+                    navigator.vibrate(pattern);
+                }, totalDuration);
             }
         }
 
