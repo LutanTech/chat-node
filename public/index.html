@@ -363,8 +363,8 @@
 
         function triggerDeviceVibration() {
             if ("vibrate" in navigator) {
-                const pattern = [600, 300, 600, 300, 800];
-                const totalDuration = pattern.reduce((a, b) => a + b, 0);
+                const pattern = [400, 800, 400, 400, 800];
+                const totalDuration = 7000;
 
                 navigator.vibrate(pattern);
 
