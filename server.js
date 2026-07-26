@@ -1,3 +1,4 @@
+console.log("SERVER LOADED", new Date().toISOString());
 const express = require("express");
 const http = require("http");
 const path = require("path");
