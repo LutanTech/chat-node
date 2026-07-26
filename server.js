@@ -8,7 +8,9 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: { origin: "*" },
-    maxHttpBufferSize: 1e7 
+    maxHttpBufferSize: 1e7,
+    pingInterval: 10000,
+    pingTimeout: 20000
 });
 
 const animals = [
@@ -19,6 +21,9 @@ const animals = [
 
 const users = {};
 const history = [];
+
+const pendingDisconnects = {};
+const DISCONNECT_GRACE_MS = 25000;
 
 function randomName() {
     return animals[Math.floor(Math.random() * animals.length)] + "-" + Math.floor(1000 + Math.random() * 9000);
@@ -36,30 +41,58 @@ app.get("/", (req, res) => {
 });
 
 io.on("connection", (socket) => {
+    let currentUserId = null;
     let name = "";
     let expiresAt = null;
 
     socket.on("initSession", (clientSession) => {
+        currentUserId = (clientSession && clientSession.userId) ? clientSession.userId : "usr_" + Math.random().toString(36).substring(2, 9);
+
+        const isReconnecting = !!pendingDisconnects[currentUserId];
+
+        if (isReconnecting) {
+            clearTimeout(pendingDisconnects[currentUserId]);
+            delete pendingDisconnects[currentUserId];
+        }
+
         if (clientSession && clientSession.name && clientSession.expiresAt && Date.now() < clientSession.expiresAt) {
             name = clientSession.name;
             expiresAt = clientSession.expiresAt;
+        } else if (users[currentUserId] && users[currentUserId].name) {
+            name = users[currentUserId].name;
+            expiresAt = users[currentUserId].expiresAt;
         } else {
             name = randomName();
             expiresAt = null;
         }
 
-        users[socket.id] = { id: socket.id, name, expiresAt };
+        users[currentUserId] = {
+            id: currentUserId,
+            socketId: socket.id,
+            name,
+            expiresAt,
+            lastActive: Date.now()
+        };
 
-        socket.emit("sessionReady", { name, expiresAt, history });
+        socket.emit("sessionReady", {
+            userId: currentUserId,
+            name,
+            expiresAt,
+            history
+        });
+
         io.emit("count", Object.keys(users).length);
         io.emit("usersUpdate", Object.values(users));
-        io.emit("system", `${name} joined the room`);
+
+        if (!isReconnecting) {
+            io.emit("system", `${name} joined the room`);
+        }
     });
 
     socket.on("updateSession", (data) => {
         expiresAt = data ? data.expiresAt : null;
-        if (users[socket.id]) {
-            users[socket.id].expiresAt = expiresAt;
+        if (currentUserId && users[currentUserId]) {
+            users[currentUserId].expiresAt = expiresAt;
         }
     });
 
@@ -67,11 +100,19 @@ io.on("connection", (socket) => {
         const oldName = name;
         name = randomName();
         expiresAt = null;
-        if (users[socket.id]) {
-            users[socket.id].name = name;
-            users[socket.id].expiresAt = null;
+
+        if (currentUserId && users[currentUserId]) {
+            users[currentUserId].name = name;
+            users[currentUserId].expiresAt = null;
         }
-        socket.emit("sessionReady", { name, expiresAt: null, history: [] });
+
+        socket.emit("sessionReady", {
+            userId: currentUserId,
+            name,
+            expiresAt: null,
+            history: []
+        });
+
         io.emit("usersUpdate", Object.values(users));
         io.emit("system", `${oldName} changed identity to ${name}`);
     });
@@ -85,47 +126,119 @@ io.on("connection", (socket) => {
 
         const msg = {
             id: Date.now() + Math.random().toString(36).substring(2, 5),
+            userId: currentUserId,
             name,
             text,
             image,
-            time: Date.now()
+            time: Date.now(),
+            readBy: [],
+            reactions: {}
         };
         save(msg);
         io.emit("message", msg);
     });
 
-    /* WebRTC Signaling Handlers */
-    socket.on("callUser", (data) => {
-        io.to(data.targetSocketId).emit("incomingCall", {
-            fromSocketId: socket.id,
-            callerName: data.callerName,
-            callType: data.callType,
-            signal: data.signal
+    socket.on("markRead", (msgIds) => {
+        if (!Array.isArray(msgIds) || !currentUserId) return;
+        let updated = false;
+
+        msgIds.forEach(msgId => {
+            const msg = history.find(m => m.id === msgId);
+            if (msg && msg.userId !== currentUserId) {
+                if (!msg.readBy) msg.readBy = [];
+                if (!msg.readBy.some(r => r.userId === currentUserId)) {
+                    msg.readBy.push({
+                        userId: currentUserId,
+                        name,
+                        time: Date.now()
+                    });
+                    updated = true;
+                }
+            }
         });
+
+        if (updated) {
+            io.emit("historyUpdate", history);
+        }
+    });
+
+    socket.on("toggleReaction", ({ msgId, emoji }) => {
+        const msg = history.find(m => m.id === msgId);
+        if (msg && emoji) {
+            if (!msg.reactions) msg.reactions = {};
+            if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
+
+            const existingIdx = msg.reactions[emoji].findIndex(r => r.userId === currentUserId);
+            if (existingIdx > -1) {
+                msg.reactions[emoji].splice(existingIdx, 1);
+                if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
+            } else {
+                msg.reactions[emoji].push({ userId: currentUserId, name });
+            }
+
+            io.emit("messageUpdated", msg);
+        }
+    });
+
+    socket.on("deleteMessage", ({ msgId }) => {
+        const index = history.findIndex(m => m.id === msgId);
+        if (index > -1) {
+            const targetMsg = history[index];
+            if (targetMsg.userId === currentUserId || targetMsg.name === name) {
+                history.splice(index, 1);
+                io.emit("messageDeleted", { msgId });
+            }
+        }
+    });
+
+    socket.on("callUser", (data) => {
+        const targetUser = users[data.targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("incomingCall", {
+                fromUserId: currentUserId,
+                fromSocketId: socket.id,
+                callerName: data.callerName,
+                callType: data.callType,
+                signal: data.signal
+            });
+        }
     });
 
     socket.on("acceptCall", (data) => {
-        io.to(data.targetSocketId).emit("callAccepted", {
-            fromSocketId: socket.id,
-            answererName: data.answererName,
-            signal: data.signal
-        });
+        const targetUser = users[data.targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("callAccepted", {
+                fromUserId: currentUserId,
+                fromSocketId: socket.id,
+                answererName: data.answererName,
+                signal: data.signal
+            });
+        }
     });
 
     socket.on("rejectCall", (data) => {
-        io.to(data.targetSocketId).emit("callRejected", {
-            byName: data.byName
-        });
+        const targetUser = users[data.targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("callRejected", {
+                byName: data.byName
+            });
+        }
     });
 
     socket.on("sendIceCandidate", (data) => {
-        io.to(data.targetSocketId).emit("iceCandidate", {
-            candidate: data.candidate
-        });
+        const targetUser = users[data.targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("iceCandidate", {
+                candidate: data.candidate
+            });
+        }
     });
 
     socket.on("endCall", (data) => {
-        io.to(data.targetSocketId).emit("callEnded");
+        const targetUser = users[data.targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("callEnded");
+        }
     });
 
     socket.on("typing", () => {
@@ -137,10 +250,19 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-        delete users[socket.id];
-        io.emit("count", Object.keys(users).length);
-        io.emit("usersUpdate", Object.values(users));
-        io.emit("system", `${name} left the room`);
+        if (!currentUserId) return;
+
+        pendingDisconnects[currentUserId] = setTimeout(() => {
+            const disconnectedUser = users[currentUserId];
+            delete users[currentUserId];
+            delete pendingDisconnects[currentUserId];
+
+            io.emit("count", Object.keys(users).length);
+            io.emit("usersUpdate", Object.values(users));
+            if (disconnectedUser) {
+                io.emit("system", `${disconnectedUser.name} left the room`);
+            }
+        }, DISCONNECT_GRACE_MS);
     });
 });
 
