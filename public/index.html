@@ -64,10 +64,24 @@
         }
         .animate-pop-in { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
+        @keyframes highlightFlash {
+            0%, 100% { background-color: transparent; }
+            30%, 70% { background-color: rgba(99, 102, 241, 0.25); }
+        }
+        .highlight-msg {
+            animation: highlightFlash 1.5s ease-in-out;
+            border-radius: 1rem;
+        }
+
         body {
             overscroll-behavior-y: none;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        .msg-bubble-container {
+            touch-action: pan-y;
+            will-change: transform;
         }
     </style>
 </head>
@@ -188,11 +202,12 @@
             <div id="messages-container" class="flex-1 overflow-y-auto p-3 lg:p-6 space-y-3">
                 <div class="max-w-md mx-auto text-center py-4 px-4 my-2 rounded-2xl glass-panel">
                     <div class="w-10 h-10 rounded-2xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center mx-auto mb-2 text-lg">
-                        <i class="fa-solid fa-check-double"></i>
+                        <i class="fa-solid fa-reply"></i>
                     </div>
-                    <h3 class="text-slate-100 font-bold text-sm mb-1">Message Status & Viewed Receipts</h3>
+                    <h3 class="text-slate-100 font-bold text-sm mb-1">Swipe or Right-Click to Reply</h3>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        Click on any message or tap the info <i class="fa-solid fa-circle-info text-brand-400"></i> button to view detailed read receipts, viewer list, and precise timestamps.
+                        <span class="sm:hidden">Swipe any message right to quickly reply!</span>
+                        <span class="hidden sm:inline">Right-click any message or hover to bring up context options to reply.</span>
                     </p>
                 </div>
                 <div id="messages" class="space-y-3 max-w-4xl mx-auto"></div>
@@ -210,6 +225,26 @@
 
             <footer class="p-2.5 lg:p-4 bg-slate-900/90 border-t border-slate-800/80 backdrop-blur-lg relative shrink-0 pb-safe">
                 <div class="max-w-4xl mx-auto">
+
+                    <!-- Replying Banner Indicator -->
+                    <div id="reply-banner" class="hidden mb-2 p-2 bg-slate-800/95 border-l-4 border-brand-500 rounded-r-xl flex items-center justify-between shadow-lg animate-pop-in">
+                        <div class="flex items-center gap-2.5 overflow-hidden pr-2">
+                            <div class="w-7 h-7 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center shrink-0 text-xs">
+                                <i class="fa-solid fa-reply"></i>
+                            </div>
+                            <div class="truncate text-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-slate-400 text-[10px]">Replying to</span>
+                                    <span id="reply-banner-name" class="font-bold text-brand-300 truncate">User</span>
+                                </div>
+                                <p id="reply-banner-text" class="text-slate-300 truncate text-[11px] font-medium">Message preview...</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="cancelReply()" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700/60 rounded-lg transition">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>
+
                     <!-- Image Attachment Preview Box -->
                     <div id="image-preview-container" class="hidden mb-2 p-2 bg-slate-800/90 border border-slate-700/80 rounded-xl flex items-center justify-between">
                         <div class="flex items-center gap-3">
@@ -254,6 +289,31 @@
                 </div>
             </footer>
         </main>
+    </div>
+
+    <div id="custom-context-menu" class="hidden fixed z-50 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl py-1.5 w-48 animate-pop-in backdrop-blur-xl">
+        <button onclick="contextActionReply()" class="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+            <i class="fa-solid fa-reply text-brand-400 w-4 text-center"></i>
+            <span>Reply</span>
+        </button>
+        <button onclick="contextActionReact('❤️')" class="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+            <i class="fa-solid fa-heart text-rose-400 w-4 text-center"></i>
+            <span>React Heart</span>
+        </button>
+        <button onclick="contextActionCopy()" class="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+            <i class="fa-regular fa-copy text-amber-400 w-4 text-center"></i>
+            <span>Copy Text</span>
+        </button>
+        <button onclick="contextActionInfo()" class="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+            <i class="fa-solid fa-circle-info text-indigo-400 w-4 text-center"></i>
+            <span>Message Info</span>
+        </button>
+        <div id="context-delete-btn-wrapper" class="border-t border-slate-800 my-1 pt-1">
+            <button onclick="contextActionDelete()" class="w-full px-3.5 py-2 text-left text-xs text-rose-400 hover:bg-rose-600 hover:text-white flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-trash-can w-4 text-center"></i>
+                <span>Delete</span>
+            </button>
+        </div>
     </div>
 
     <!-- Message Info Modal ("Viewed By..." Details) -->
@@ -311,7 +371,7 @@
 
     <!-- Incoming Call Modal -->
     <div id="incoming-call-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col items-center justify-center p-4">
-        <div class="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center shadow-2xl flex flex-col items-center animate-bounce-short">
+        <div class="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center shadow-2xl flex flex-col items-center">
             <div class="w-20 h-20 rounded-full bg-brand-600/20 border-2 border-brand-500 flex items-center justify-center text-brand-400 text-3xl mb-4">
                 <i class="fa-solid fa-phone-volume" id="incoming-call-type-icon"></i>
             </div>
@@ -389,6 +449,10 @@
         let messagesHistory = [];
         let unreadMessageIds = new Set();
         let selectedImageBase64 = null;
+
+        // Reply State
+        let activeReplyMsg = null;
+        let contextMenuTargetMsgId = null;
 
         // WebRTC & Call State
         let peerConnection = null;
@@ -528,6 +592,20 @@
                 if (socket && !socket.connected) {
                     socket.connect();
                 }
+            }
+        });
+
+        // Hide desktop custom context menu on outside click or press escape
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('custom-context-menu');
+            if (menu && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('custom-context-menu').classList.add('hidden');
             }
         });
 
@@ -738,6 +816,107 @@
             });
         }
 
+        function setReplyTo(msgId) {
+            const targetMsg = messagesHistory.find(m => m.id === msgId);
+            if (!targetMsg) return;
+
+            activeReplyMsg = targetMsg;
+            hapticFeedback();
+
+            const banner = document.getElementById('reply-banner');
+            document.getElementById('reply-banner-name').innerText = targetMsg.name + (targetMsg.userId === myUserId ? ' (You)' : '');
+            
+            let previewText = targetMsg.text || '';
+            if (targetMsg.image) {
+                previewText = previewText ? `📷 [Photo] ${previewText}` : '📷 [Photo]';
+            }
+            document.getElementById('reply-banner-text').innerText = previewText;
+
+            banner.classList.remove('hidden');
+            document.getElementById('msg-input').focus();
+        }
+
+        function cancelReply() {
+            activeReplyMsg = null;
+            document.getElementById('reply-banner').classList.add('hidden');
+        }
+
+        function scrollToMessage(msgId) {
+            const targetEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetEl.classList.remove('highlight-msg');
+                void targetEl.offsetWidth; // Trigger reflow
+                targetEl.classList.add('highlight-msg');
+            }
+        }
+
+        function handleContextMenu(e, msgId) {
+            e.preventDefault();
+            contextMenuTargetMsgId = msgId;
+            const msg = messagesHistory.find(m => m.id === msgId);
+            if (!msg) return;
+
+            const isMe = msg.userId ? (msg.userId === myUserId) : (msg.name === myUsername);
+            const menu = document.getElementById('custom-context-menu');
+            const deleteBtn = document.getElementById('context-delete-btn-wrapper');
+
+            if (isMe) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+
+            // Position context menu directly at cursor inside viewport bounds
+            const menuWidth = 200;
+            const menuHeight = 180;
+            let x = e.clientX;
+            let y = e.clientY;
+
+            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+
+            menu.style.left = `${Math.max(10, x)}px`;
+            menu.style.top = `${Math.max(10, y)}px`;
+            menu.classList.remove('hidden');
+        }
+
+        function contextActionReply() {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            if (contextMenuTargetMsgId) setReplyTo(contextMenuTargetMsgId);
+        }
+
+        function contextActionReact(emoji) {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            if (contextMenuTargetMsgId) toggleReaction(contextMenuTargetMsgId, emoji);
+        }
+
+        function contextActionCopy() {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            const msg = messagesHistory.find(m => m.id === contextMenuTargetMsgId);
+            if (msg && msg.text) {
+                try {
+                    const temp = document.createElement('textarea');
+                    temp.value = msg.text;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                    addSystemMessageUI("Copied message to clipboard!");
+                } catch(e) {}
+            }
+        }
+
+        function contextActionInfo() {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            if (contextMenuTargetMsgId) openMessageInfoModal(contextMenuTargetMsgId);
+        }
+
+        function contextActionDelete() {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            if (contextMenuTargetMsgId) deleteMessage(contextMenuTargetMsgId);
+        }
+
         function renderAllMessages() {
             const container = document.getElementById('messages');
             container.innerHTML = '';
@@ -765,6 +944,24 @@
             msgElement.setAttribute('data-msg-id', data.id);
             msgElement.className = 'flex gap-2.5 group relative animate-pop-in ' + (isMe ? 'flex-row-reverse' : 'flex-row');
 
+            // Construct Quoted Reply HTML if message is replying to another message
+            let quotedReplyHTML = '';
+            if (data.replyTo) {
+                let replySnippet = escapeHTML(data.replyTo.text || '');
+                if (data.replyTo.image) {
+                    replySnippet = replySnippet ? `📷 ${replySnippet}` : '📷 Photo';
+                }
+                quotedReplyHTML = `
+                    <div onclick="scrollToMessage('${data.replyTo.id}')" class="mb-1.5 p-2 rounded-xl bg-slate-950/60 border-l-4 border-brand-400 cursor-pointer hover:bg-slate-950/90 transition text-left">
+                        <div class="text-[10px] font-bold text-brand-300 flex items-center gap-1">
+                            <i class="fa-solid fa-reply text-[9px]"></i>
+                            <span>${escapeHTML(data.replyTo.name)}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 line-clamp-1 italic font-normal">${replySnippet}</p>
+                    </div>
+                `;
+            }
+
             let contentHTML = '';
             if (data.image) {
                 contentHTML += `<div class="mb-2 overflow-hidden rounded-xl cursor-pointer"><img src="${data.image}" onclick="openLightbox('${data.image}')" class="max-w-full max-h-60 rounded-xl hover:scale-105 transition object-cover"></div>`;
@@ -787,8 +984,11 @@
                 reactionsHTML += '</div>';
             }
 
-            // Quick Actions Hover Bar (Info, Emoji, Delete)
+            // Quick Actions Hover Bar (Reply, Info, Emoji, Delete)
             const actionsBarHTML = `<div class="absolute top-0 ${isMe ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'} opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10">
+                <button onclick="setReplyTo('${data.id}')" title="Reply to Message" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-brand-400 text-slate-400 rounded-lg text-xs shadow-md">
+                    <i class="fa-solid fa-reply"></i>
+                </button>
                 <button onclick="openMessageInfoModal('${data.id}')" title="Message Info & Views" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-brand-400 text-slate-400 rounded-lg text-xs shadow-md">
                     <i class="fa-solid fa-circle-info"></i>
                 </button>
@@ -821,7 +1021,7 @@
                 <div class="w-7 h-7 rounded-lg ${getAvatarStyle(data.name)} font-bold text-xs flex items-center justify-center shrink-0 border mt-1">
                     ${getAvatarIcon(data.name)}
                 </div>
-                <div class="max-w-[85%] sm:max-w-[70%] relative">
+                <div class="max-w-[85%] sm:max-w-[70%] relative msg-bubble-wrapper">
                     ${actionsBarHTML}
                     <div class="flex items-center gap-2 mb-1 px-1 ${isMe ? 'justify-end' : 'justify-start'}">
                         <span class="text-[11px] font-medium text-slate-400 ${isMe ? 'text-brand-400' : ''}">
@@ -830,12 +1030,25 @@
                         <span class="text-[10px] text-slate-500">${timeStr}</span>
                         ${statusIconHTML}
                     </div>
-                    <div class="px-3.5 py-2 rounded-2xl text-sm leading-relaxed break-words shadow-sm ${isMe ? 'bg-brand-600 text-white rounded-tr-none' : 'bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-none'}">
+                    
+                    <!-- Swipe indicator icon for mobile pull -->
+                    <div class="swipe-indicator absolute left-[-32px] top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-brand-600/80 text-white flex items-center justify-center text-[10px] opacity-0 transition-opacity">
+                        <i class="fa-solid fa-reply"></i>
+                    </div>
+
+                    <div class="msg-bubble px-3.5 py-2 rounded-2xl text-sm leading-relaxed break-words shadow-sm ${isMe ? 'bg-brand-600 text-white rounded-tr-none' : 'bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-none'} transition-transform duration-100">
+                        ${quotedReplyHTML}
                         ${contentHTML}
                         ${reactionsHTML}
                     </div>
                 </div>
             `;
+
+            // Attach Right Click Context Menu (Desktop)
+            msgElement.addEventListener('contextmenu', (e) => handleContextMenu(e, data.id));
+
+            // Attach Swipe to Reply Gestures (Mobile / Touch Devices)
+            attachSwipeToReply(msgElement, data.id);
 
             container.appendChild(msgElement);
             if (messageObserver && !isMe) {
@@ -843,6 +1056,68 @@
             }
 
             scrollToBottom();
+        }
+
+        function attachSwipeToReply(element, msgId) {
+            const bubble = element.querySelector('.msg-bubble');
+            const indicator = element.querySelector('.swipe-indicator');
+            if (!bubble) return;
+
+            let startX = 0;
+            let startY = 0;
+            let currentX = 0;
+            let isDragging = false;
+            let isHorizontalSwipe = false;
+
+            bubble.addEventListener('touchstart', (e) => {
+                if (e.touches.length !== 1) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                currentX = 0;
+                isDragging = true;
+                isHorizontalSwipe = false;
+                bubble.style.transition = 'none';
+            }, { passive: true });
+
+            bubble.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touchX = e.touches[0].clientX;
+                const touchY = e.touches[0].clientY;
+                const diffX = touchX - startX;
+                const diffY = touchY - startY;
+
+                // Check direction on initial movement
+                if (!isHorizontalSwipe && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 8) {
+                    isHorizontalSwipe = true;
+                }
+
+                // Drag right to reply (only trigger when swiping right)
+                if (isHorizontalSwipe && diffX > 0) {
+                    currentX = Math.min(diffX * 0.45, 75); // Dampened spring drag effect
+                    bubble.style.transform = `translateX(${currentX}px)`;
+                    
+                    if (indicator) {
+                        const opacity = Math.min(currentX / 40, 1);
+                        indicator.style.opacity = opacity.toString();
+                    }
+                }
+            }, { passive: true });
+
+            bubble.addEventListener('touchend', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                bubble.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                bubble.style.transform = 'translateX(0px)';
+
+                if (indicator) {
+                    indicator.style.opacity = '0';
+                }
+
+                // Trigger reply if swiped past threshold
+                if (isHorizontalSwipe && currentX >= 40) {
+                    setReplyTo(msgId);
+                }
+            });
         }
 
         function openMessageInfoModal(msgId) {
@@ -920,12 +1195,23 @@
             if (!text && !selectedImageBase64) return;
 
             if (socket) {
-                socket.emit('message', { text: text, image: selectedImageBase64 });
+                const payload = {
+                    text: text,
+                    image: selectedImageBase64,
+                    replyTo: activeReplyMsg ? {
+                        id: activeReplyMsg.id,
+                        name: activeReplyMsg.name,
+                        text: activeReplyMsg.text || (activeReplyMsg.image ? '[Photo]' : ''),
+                        image: activeReplyMsg.image || null
+                    } : null
+                };
+                socket.emit('message', payload);
                 socket.emit('stopTyping');
             }
             
             input.value = '';
             clearSelectedImage();
+            cancelReply();
             document.getElementById('emoji-picker').classList.add('hidden');
         }
 

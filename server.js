@@ -122,6 +122,7 @@ io.on("connection", (socket) => {
         if (!payload) return;
         const text = typeof payload === 'string' ? payload.trim() : (payload.text || '').trim();
         const image = typeof payload === 'object' ? payload.image : null;
+        const replyTo = typeof payload === 'object' && payload.replyTo ? payload.replyTo : null;
 
         if (!text && !image) return;
 
@@ -131,6 +132,12 @@ io.on("connection", (socket) => {
             name,
             text,
             image,
+            replyTo: replyTo ? {
+                id: replyTo.id,
+                name: replyTo.name,
+                text: replyTo.text,
+                image: replyTo.image
+            } : null,
             time: Date.now(),
             readBy: [],
             reactions: {}
