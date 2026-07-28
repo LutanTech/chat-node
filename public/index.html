@@ -1,13 +1,68 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-950 text-slate-100 select-none">
-<head>
+    <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <title>AnonChat | Anonymous Chat, Voice Calls and Video Calls</title>
+
+    <meta name="description" content="AnonChat lets you chat anonymously with strangers through secure private messaging, voice calls and video calls. No registration required.">
+    <meta name="keywords" content="anonymous chat, anon chat, stranger chat, random chat, private messaging, voice calls, video calls, secure chat, online chat, anonymous messaging">
+    <meta name="author" content="Tunu Publishers">
+    <meta name="robots" content="index,follow">
+    <meta name="theme-color" content="#090d16">
+
+    <link rel="canonical" href="https://chat.tunupublishers.com/">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo/icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/logo/icon.png">
+    <link rel="icon" type="image/x-icon" sizes="192x192" href="/logo/icon.png">
+    <link rel="shortcut-icon" type="image/x-icon" sizes="192x192" href="/logo/icon.png">
+    <link rel="apple-touch-icon" href="/logo/icon.png">
+
+    <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AnonChat">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#090d16">
-    <title>AnonChat & Calls</title>
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="AnonChat">
+    <meta property="og:title" content="AnonChat | Anonymous Chat and Calls">
+    <meta property="og:description" content="Secure anonymous one to one messaging, voice calls and video calls without creating an account.">
+    <meta property="og:url" content="https://chat.tunupublishers.com/">
+    <meta property="og:image" content="https://chat.tunupublishers.com/logo/icon.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AnonChat | Anonymous Chat and Calls">
+    <meta name="twitter:description" content="Private anonymous messaging, voice calls and video calls.">
+    <meta name="twitter:image" content="https://chat.tunupublishers.com/logo/icon.png">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "AnonChat",
+      "url": "https://chat.tunupublishers.com/",
+      "description": "Anonymous one to one messaging, voice calls and video calls.",
+      "image": "https://chat.tunupublishers.com/logo/icon.png",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Tunu Publishers",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://chat.tunupublishers.com/logo/icon.png"
+        }
+      }
+    }
+    </script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -39,6 +94,9 @@
         .app-height {
             height: 100vh;
             height: 100dvh;
+        }
+        .-blur{
+            filter: blur(8px);
         }
         
         ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -101,11 +159,11 @@
                         <i class="fa-solid fa-ghost text-lg"></i>
                     </div>
                     <div>
-                        <h1 class="font-bold text-slate-100 tracking-wide text-base">AnonChat & Calls</h1>
-                        <p class="text-[11px] text-slate-400 font-medium">Persistent Background Session</p>
+                        <h1 class="font-bold text-slate-100 tracking-wide text-base">AnonChat 1-on-1</h1>
+                        <p class="text-[11px] text-slate-400 font-medium">Direct Peer Messaging</p>
                     </div>
                 </div>
-                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-200 p-2 rounded-xl bg-slate-800/50">
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-200 p-2 rounded bg-slate-800/50">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
@@ -113,15 +171,15 @@
             <div class="p-3.5 mx-3 my-3 rounded-2xl bg-slate-800/50 border border-slate-700/50 flex flex-col gap-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2.5 overflow-hidden">
-                        <div id="user-avatar" class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold flex items-center justify-center text-xs shrink-0">
+                        <div id="user-avatar" class="w-9 h-9 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold flex items-center justify-center text-xs shrink-0">
                             <i class="fa-solid fa-paw"></i>
                         </div>
                         <div class="truncate">
                             <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Your Identity</div>
-                            <div id="my-username" class="text-sm font-semibold text-slate-100 truncate">Connecting...</div>
+                            <input id="my-username" class="text-sm bg-[#0000] outline-none font-semibold text-slate-100 truncate" value="Connecting..." oninput="extendSession()">
                         </div>
                     </div>
-                    <button onclick="changeIdentity()" title="Generate New Identity" class="p-2 text-slate-400 hover:text-brand-400 hover:bg-slate-700/60 rounded-xl transition">
+                    <button onclick="changeIdentity()" title="Generate New Identity" class="p-2 text-slate-400 hover:text-brand-400 hover:bg-slate-700/60 rounded transition">
                         <i class="fa-solid fa-arrows-rotate text-xs"></i>
                     </button>
                 </div>
@@ -132,10 +190,10 @@
                         <span>Keep session for 3 hours</span>
                     </label>
 
-                    <div id="session-countdown-wrapper" class="hidden flex items-center justify-between bg-slate-950/70 rounded-xl px-2.5 py-1.5 border border-slate-800 text-xs">
+                    <div id="session-countdown-wrapper" class="hidden flex items-center justify-between bg-slate-950/70 rounded px-2.5 py-1.5 border border-slate-800 text-xs">
                         <div class="flex items-center gap-1.5 text-slate-400">
                             <i class="fa-regular fa-clock text-brand-400" id="timer-icon"></i>
-                            <span id="countdown-timer" class="font-mono text-slate-200 font-medium">03:00:00</span>
+                            <span id="countdown-timer" class="font-mono text-slate-200 font-medium">00:00:00</span>
                         </div>
                         <button onclick="extendSession()" title="Extend persistent session" class="px-2 py-0.5 rounded-lg bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/30 text-[11px] font-medium transition flex items-center gap-1">
                             <i class="fa-solid fa-plus text-[9px]"></i>
@@ -147,18 +205,22 @@
 
             <div class="flex-1 overflow-y-auto px-3 py-1">
                 <div class="flex items-center justify-between px-2 mb-2">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Room Users</div>
+                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Online Contacts</div>
                     <span id="user-count-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-emerald-400 border border-slate-700">0</span>
                 </div>
                 <div id="online-users-list" class="space-y-1"></div>
             </div>
 
             <div class="p-3 border-t border-slate-800/80 bg-slate-900/60 flex items-center justify-between text-xs text-slate-400 pb-safe">
-                <button onclick="toggleWakeLockManual()" id="wake-lock-sidebar-btn" class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-slate-800/60 text-slate-300 hover:text-white transition">
+                <button onclick="toggleWakeLockManual()" id="wake-lock-sidebar-btn" class="flex items-center gap-2 px-2.5 py-2 rounded bg-slate-800/60 text-slate-300 hover:text-white transition">
                     <i class="fa-solid fa-sun text-amber-400" id="wake-icon"></i>
                     <span id="wake-text">Wake Off</span>
                 </button>
-                <button onclick="toggleAudio()" id="sound-btn" class="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-slate-800 transition">
+                <button onclick="toggleBlur()" id="sound-btn" class="flex items-center gap-2 px-2.5 py-2 rounded hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-eye-slash text-brand-400" id="blur-icon"></i>
+                    <span id="blur-text">Blur Off</span>
+                </button>
+                <button onclick="toggleAudio()" id="sound-btn" class="flex items-center gap-2 px-2.5 py-2 rounded hover:bg-slate-800 transition">
                     <i class="fa-solid fa-volume-high text-brand-400" id="sound-icon"></i>
                     <span id="sound-text">Sound On</span>
                 </button>
@@ -170,44 +232,59 @@
             <!-- App Navigation Header -->
             <header class="h-14 lg:h-16 px-4 border-b border-slate-800/80 glass-header flex items-center justify-between shrink-0 z-20 pt-safe">
                 <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" class="lg:hidden text-slate-300 hover:text-white p-2 rounded-xl bg-slate-800/50 transition">
-                        <i class="fa-solid fa-users-viewfinder text-base"></i>
+                    <button onclick="toggleSidebar()" class="lg:hidden text-slate-300 hover:text-white p-2 rounded bg-slate-800/50 transition">
+                        <i class="fa-solid fa-bars text-base"></i>
                     </button>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h2 class="font-bold text-slate-100 text-sm lg:text-base"># main-lounge</h2>
-                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <h2 id="header-chat-title" class="font-bold text-slate-100 text-sm lg:text-base">Select a peer to chat</h2>
+                            <span id="header-status-badge" class="hidden inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                                Live
+                                Online
                             </span>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button onclick="requestNotificationPermission()" id="notif-perm-btn" title="Enable Call Notifications to Wake Screen" class="px-2.5 py-1.5 rounded-xl bg-slate-800/70 border border-slate-700 text-slate-300 hover:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 transition">
+                    <div id="call-buttons-header" class="hidden flex items-center gap-1">
+                        <button onclick="initiateCall(activeTargetUserId, 'audio')" title="Audio Call" class="p-2 text-slate-300 hover:text-emerald-400 hover:bg-slate-800 rounded transition">
+                            <i class="fa-solid fa-phone text-sm"></i>
+                        </button>
+                        <button onclick="initiateCall(activeTargetUserId, 'video')" title="Video Call" class="p-2 text-slate-300 hover:text-brand-400 hover:bg-slate-800 rounded transition">
+                            <i class="fa-solid fa-video text-sm"></i>
+                        </button>
+                    </div>
+                    <button onclick="requestNotificationPermission()" id="notif-perm-btn" title="Enable Call Notifications" class="px-2.5 py-1.5 rounded bg-slate-800/70 border border-slate-700 text-slate-300 hover:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 transition">
                         <i class="fa-solid fa-bell text-slate-400" id="notif-perm-icon"></i>
-                        <span id="notif-perm-text" class="hidden sm:inline">Allow Alerts</span>
+                        <span id="notif-perm-text" class="hidden sm:inline">Alerts</span>
                     </button>
-                    <button onclick="toggleWakeLockManual()" id="wake-lock-header-btn" title="Toggle Screen Keep Awake" class="px-2.5 py-1.5 rounded-xl bg-slate-800/70 border border-slate-700 text-slate-300 hover:text-amber-400 text-xs font-semibold flex items-center gap-1.5 transition">
-                        <i class="fa-solid fa-sun text-slate-400" id="header-wake-icon"></i>
-                        <span id="header-wake-text" class="hidden sm:inline">Keep Awake</span>
-                    </button>
-                    <button onclick="clearMessagesUI()" title="Clear Local Chat" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition">
+                    <button onclick="clearMessagesUI()" title="Clear Chat UI" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition">
                         <i class="fa-solid fa-trash-can text-sm"></i>
                     </button>
                 </div>
             </header>
 
+            <!-- Pinned Message Banner -->
+            <div id="pinned-banner" class="hidden bg-slate-900/90 border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-300">
+                <div class="flex items-center gap-2 overflow-hidden cursor-pointer" onclick="scrollToPinnedMessage()">
+                    <i class="fa-solid fa-thumbtack text-brand-400 shrink-0"></i>
+                    <span class="font-bold text-slate-200">Pinned:</span>
+                    <span id="pinned-banner-text" class="truncate text-slate-400">...</span>
+                </div>
+                <button onclick="togglePinMessage(pinnedMsgId)" class="p-1 hover:text-rose-400 text-slate-500">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
             <div id="messages-container" class="flex-1 overflow-y-auto p-3 lg:p-6 space-y-3">
-                <div class="max-w-md mx-auto text-center py-4 px-4 my-2 rounded-2xl glass-panel">
-                    <div class="w-10 h-10 rounded-2xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center mx-auto mb-2 text-lg">
-                        <i class="fa-solid fa-reply"></i>
+                <div id="empty-state-notice" class="max-w-md mx-auto text-center py-6 px-4 my-8 rounded-2xl glass-panel">
+                    <div class="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center mx-auto mb-3 text-xl">
+                        <i class="fa-solid fa-comments"></i>
                     </div>
-                    <h3 class="text-slate-100 font-bold text-sm mb-1">Swipe or Right-Click to Reply</h3>
+                    <h3 class="text-slate-100 font-bold text-sm mb-1">Select an Online Contact</h3>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        <span class="sm:hidden">Swipe any message right to quickly reply!</span>
-                        <span class="hidden sm:inline">Right-click any message or hover to bring up context options to reply.</span>
+                        Pick someone from the sidebar to launch a private 1-on-1 direct conversation and initiate calls.
                     </p>
                 </div>
                 <div id="messages" class="space-y-3 max-w-4xl mx-auto"></div>
@@ -220,7 +297,7 @@
                     <span class="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style="animation-delay: 0.15s"></span>
                     <span class="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
                 </div>
-                <span id="typing-text">Someone is typing...</span>
+                <span id="typing-text">Peer is typing...</span>
             </div>
 
             <footer class="p-2.5 lg:p-4 bg-slate-900/90 border-t border-slate-800/80 backdrop-blur-lg relative shrink-0 pb-safe">
@@ -246,7 +323,7 @@
                     </div>
 
                     <!-- Image Attachment Preview Box -->
-                    <div id="image-preview-container" class="hidden mb-2 p-2 bg-slate-800/90 border border-slate-700/80 rounded-xl flex items-center justify-between">
+                    <div id="image-preview-container" class="hidden mb-2 p-2 bg-slate-800/90 border border-slate-700/80 rounded flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <img id="image-preview-thumbnail" class="w-10 h-10 object-cover rounded-lg border border-slate-700" src="" alt="Attachment">
                             <div class="text-xs">
@@ -261,11 +338,11 @@
 
                     <!-- Emoji Picker Drawer -->
                     <div id="emoji-picker" class="hidden absolute bottom-full left-3 mb-2 p-2 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl flex items-center gap-1 z-30">
-                        <button type="button" onclick="addEmoji('👍')" class="p-2 hover:bg-slate-700 rounded-xl text-base">👍</button>
-                        <button type="button" onclick="addEmoji('❤️')" class="p-2 hover:bg-slate-700 rounded-xl text-base">❤️</button>
-                        <button type="button" onclick="addEmoji('😂')" class="p-2 hover:bg-slate-700 rounded-xl text-base">😂</button>
-                        <button type="button" onclick="addEmoji('🔥')" class="p-2 hover:bg-slate-700 rounded-xl text-base">🔥</button>
-                        <button type="button" onclick="addEmoji('🚀')" class="p-2 hover:bg-slate-700 rounded-xl text-base">🚀</button>
+                        <button type="button" onclick="addEmoji('👍')" class="p-2 hover:bg-slate-700 rounded text-base">👍</button>
+                        <button type="button" onclick="addEmoji('❤️')" class="p-2 hover:bg-slate-700 rounded text-base">❤️</button>
+                        <button type="button" onclick="addEmoji('😂')" class="p-2 hover:bg-slate-700 rounded text-base">😂</button>
+                        <button type="button" onclick="addEmoji('🔥')" class="p-2 hover:bg-slate-700 rounded text-base">🔥</button>
+                        <button type="button" onclick="addEmoji('🚀')" class="p-2 hover:bg-slate-700 rounded text-base">🚀</button>
                     </div>
 
                     <form id="chat-form" onsubmit="handleSend(event)" class="flex items-center gap-2">
@@ -279,9 +356,9 @@
                                 <i class="fa-solid fa-image text-base"></i>
                             </button>
 
-                            <input id="msg-input" type="text" placeholder="Send message..." autocomplete="off" class="w-full bg-slate-950 text-slate-100 placeholder-slate-500 text-sm rounded-2xl pl-16 pr-3 py-3 border border-slate-800 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition">
+                            <input id="msg-input" type="text" placeholder="Select a user to chat..." disabled autocomplete="off" class="w-full bg-slate-950 text-slate-100 placeholder-slate-500 text-sm rounded-2xl pl-16 pr-3 py-3 border border-slate-800 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition disabled:opacity-50">
                         </div>
-                        <button type="submit" id="send-btn" class="px-4 py-3 bg-brand-600 hover:bg-brand-500 active:scale-95 text-white rounded-2xl text-sm font-semibold transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5 shrink-0">
+                        <button type="submit" id="send-btn" disabled class="px-4 py-3 bg-brand-600 hover:bg-brand-500 active:scale-95 text-white rounded-2xl text-sm font-semibold transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5 shrink-0 disabled:opacity-50">
                             <span>Send</span>
                             <i class="fa-solid fa-paper-plane text-xs"></i>
                         </button>
@@ -291,47 +368,59 @@
         </main>
     </div>
 
-    <div id="custom-context-menu" class="hidden fixed z-50 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl py-1.5 w-48 animate-pop-in backdrop-blur-xl">
-        <button onclick="contextActionReply()" class="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+    <!-- Comprehensive Context Menu -->
+    <div id="custom-context-menu" class="hidden fixed z-50 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl py-1.5 w-52 animate-pop-in backdrop-blur-xl">
+        <div class="px-2 py-1 flex items-center justify-around border-b border-slate-800 mb-1">
+            <button onclick="contextActionReact('❤️')" class="p-1 hover:bg-slate-800 rounded text-sm">❤️</button>
+            <button onclick="contextActionReact('👍')" class="p-1 hover:bg-slate-800 rounded text-sm">👍</button>
+            <button onclick="contextActionReact('😂')" class="p-1 hover:bg-slate-800 rounded text-sm">😂</button>
+            <button onclick="contextActionReact('🔥')" class="p-1 hover:bg-slate-800 rounded text-sm">🔥</button>
+            <button onclick="contextActionReact('😮')" class="p-1 hover:bg-slate-800 rounded text-sm">😮</button>
+            
+        </div>
+        <button onclick="contextActionReply()" class="w-full px-3.5 py-1.5 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
             <i class="fa-solid fa-reply text-brand-400 w-4 text-center"></i>
             <span>Reply</span>
         </button>
-        <button onclick="contextActionReact('❤️')" class="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
-            <i class="fa-solid fa-heart text-rose-400 w-4 text-center"></i>
-            <span>React Heart</span>
+        <button onclick="contextActionPin()" class="w-full px-3.5 py-1.5 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+            <i class="fa-solid fa-thumbtack text-amber-400 w-4 text-center"></i>
+            <span>Pin Message</span>
         </button>
-        <button onclick="contextActionCopy()" class="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
-            <i class="fa-regular fa-copy text-amber-400 w-4 text-center"></i>
+        <button onclick="contextActionCopy()" class="w-full px-3.5 py-1.5 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+            <i class="fa-regular fa-copy text-cyan-400 w-4 text-center"></i>
             <span>Copy Text</span>
         </button>
-        <button onclick="contextActionInfo()" class="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+        <button onclick="contextActionInfo()" class="w-full px-3.5 py-1.5 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
             <i class="fa-solid fa-circle-info text-indigo-400 w-4 text-center"></i>
             <span>Message Info</span>
         </button>
-        <div id="context-delete-btn-wrapper" class="border-t border-slate-800 my-1 pt-1">
-            <button onclick="contextActionDelete()" class="w-full px-3.5 py-2 text-left text-xs text-rose-400 hover:bg-rose-600 hover:text-white flex items-center gap-2.5 transition">
+        <div id="context-owner-actions" class="border-t border-slate-800 my-1 pt-1 hidden">
+            <button onclick="contextActionEdit()" class="w-full px-3.5 py-1.5 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-pen-to-square text-emerald-400 w-4 text-center"></i>
+                <span>Edit Text</span>
+            </button>
+            <button onclick="contextActionDelete()" class="w-full px-3.5 py-1.5 text-left text-xs text-rose-400 hover:bg-rose-600 hover:text-white flex items-center gap-2.5 transition">
                 <i class="fa-solid fa-trash-can w-4 text-center"></i>
                 <span>Delete</span>
             </button>
         </div>
     </div>
 
-    <!-- Message Info Modal ("Viewed By..." Details) -->
+    <!-- Message Info Modal -->
     <div id="message-info-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl flex flex-col gap-4 animate-pop-in">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center text-sm font-bold">
+                    <div class="w-8 h-8 rounded bg-brand-500/20 text-brand-400 flex items-center justify-center text-sm font-bold">
                         <i class="fa-solid fa-circle-info"></i>
                     </div>
                     <h3 class="font-bold text-slate-100 text-base">Message Info</h3>
                 </div>
-                <button onclick="closeMessageInfoModal()" class="p-1.5 text-slate-400 hover:text-slate-200 rounded-xl bg-slate-800/60">
+                <button onclick="closeMessageInfoModal()" class="p-1.5 text-slate-400 hover:text-slate-200 rounded bg-slate-800/60">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
             </div>
 
-            <!-- Message Preview Snippet -->
             <div class="bg-slate-950/70 border border-slate-800 p-3 rounded-2xl">
                 <div class="flex items-center justify-between mb-1.5">
                     <span id="info-modal-sender" class="text-xs font-bold text-brand-400">Sender</span>
@@ -340,29 +429,27 @@
                 <div id="info-modal-content" class="text-xs text-slate-200 break-words leading-relaxed"></div>
             </div>
 
-            <!-- Delivery & Read Status Counter -->
             <div class="grid grid-cols-2 gap-2 text-center">
                 <div class="p-2.5 bg-slate-800/40 border border-slate-800 rounded-2xl">
                     <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">Status</span>
                     <span id="info-modal-status-badge" class="text-xs font-bold text-emerald-400">Sent</span>
                 </div>
                 <div class="p-2.5 bg-slate-800/40 border border-slate-800 rounded-2xl">
-                    <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">Viewed By</span>
-                    <span id="info-modal-read-count" class="text-xs font-bold text-indigo-400">0 people</span>
+                    <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">Read Receipts</span>
+                    <span id="info-modal-read-count" class="text-xs font-bold text-indigo-400">0</span>
                 </div>
             </div>
 
-            <!-- Detailed Viewer List -->
             <div>
                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <i class="fa-solid fa-eye text-emerald-400 text-xs"></i>
-                    <span>Read Receipts</span>
+                    <span>Viewed By</span>
                 </h4>
                 <div id="info-modal-viewers-list" class="max-h-48 overflow-y-auto space-y-1.5 pr-1"></div>
             </div>
 
             <div class="pt-2 border-t border-slate-800 flex justify-end">
-                <button onclick="closeMessageInfoModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition">
+                <button onclick="closeMessageInfoModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-semibold transition">
                     Close
                 </button>
             </div>
@@ -391,7 +478,7 @@
         </div>
     </div>
 
-    <!-- Active Call Fullscreen Viewport -->
+    <!-- Active Call Viewport -->
     <div id="active-call-modal" class="hidden fixed inset-0 z-50 bg-slate-950 flex flex-col">
         <div class="p-3 bg-slate-900/90 border-b border-slate-800 backdrop-blur flex items-center justify-between pt-safe">
             <div class="flex items-center gap-3">
@@ -402,13 +489,13 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="toggleCallAudioMute()" id="mute-audio-btn" class="p-2.5 bg-slate-800 text-slate-200 rounded-xl text-xs">
+                <button onclick="toggleCallAudioMute()" id="mute-audio-btn" class="p-2.5 bg-slate-800 text-slate-200 rounded text-xs">
                     <i class="fa-solid fa-microphone"></i>
                 </button>
-                <button onclick="toggleCallVideoMute()" id="mute-video-btn" class="p-2.5 bg-slate-800 text-slate-200 rounded-xl text-xs">
+                <button onclick="toggleCallVideoMute()" id="mute-video-btn" class="p-2.5 bg-slate-800 text-slate-200 rounded text-xs">
                     <i class="fa-solid fa-video"></i>
                 </button>
-                <button onclick="endActiveCall()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-semibold text-xs flex items-center gap-1.5 shadow-lg">
+                <button onclick="endActiveCall()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded font-semibold text-xs flex items-center gap-1.5 shadow-lg">
                     <i class="fa-solid fa-phone-slash"></i>
                     <span>End</span>
                 </button>
@@ -423,7 +510,7 @@
         </div>
     </div>
 
-    <!-- Lightbox Image Modal -->
+    <!-- Lightbox Modal -->
     <div id="lightbox-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4" onclick="closeLightbox()">
         <img id="lightbox-img" class="max-w-full max-h-full rounded-2xl border border-slate-800 shadow-2xl object-contain" src="" alt="Enlarged view">
     </div>
@@ -438,9 +525,9 @@
             timeout: 20000
         }) : null;
 
-        // Core App State
         let myUserId = null;
         let myUsername = "";
+        let activeTargetUserId = null;
         let expiresAt = null;
         let countdownTimer = null;
         let audioEnabled = true;
@@ -449,12 +536,11 @@
         let messagesHistory = [];
         let unreadMessageIds = new Set();
         let selectedImageBase64 = null;
+        let pinnedMsgId = null;
 
-        // Reply State
         let activeReplyMsg = null;
         let contextMenuTargetMsgId = null;
 
-        // WebRTC & Call State
         let peerConnection = null;
         let localStream = null;
         let activeCallTargetUserId = null;
@@ -467,13 +553,11 @@
         let titleFlashInterval = null;
         let originalDocumentTitle = document.title;
 
-        // Screen Wake Lock State
         let wakeLock = null;
         let isWakeLockRequested = false;
         let silentAudioCtx = null;
-
-        // IntersectionObserver for auto-read marking
         let messageObserver = null;
+        let blur = localStorage.getItem("blur") === "true";
 
         const RTC_CONFIG = {
             iceServers: [
@@ -482,7 +566,7 @@
             ]
         };
 
-        const SESSION_DURATION = 3 * 60 * 60 * 1000;
+        const SESSION_DURATION = 365 * 24 * 60 * 60 * 1000;
         const STORAGE_KEY = "anonchat_session_data_v2";
 
         const avatarColors = [
@@ -509,8 +593,8 @@
                     }
                 });
 
-                if (visibleMsgIds.length > 0 && socket) {
-                    socket.emit('markRead', visibleMsgIds);
+                if (visibleMsgIds.length > 0 && socket && activeTargetUserId) {
+                    socket.emit('markRead', { targetUserId: activeTargetUserId, msgIds: visibleMsgIds });
                 }
             }, {
                 root: document.getElementById('messages-container'),
@@ -523,9 +607,7 @@
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
                     updateWakeLockUI(true);
-                    wakeLock.addEventListener('release', () => {
-                        updateWakeLockUI(false);
-                    });
+                    wakeLock.addEventListener('release', () => updateWakeLockUI(false));
                 }
             } catch (e) {}
         }
@@ -543,27 +625,20 @@
             isWakeLockRequested = !isWakeLockRequested;
             if (isWakeLockRequested) {
                 requestWakeLock();
-                addSystemMessageUI("Screen Wake Lock enabled. Screen will stay awake.");
             } else {
                 releaseWakeLock();
-                addSystemMessageUI("Screen Wake Lock disabled.");
             }
         }
 
         function updateWakeLockUI(active) {
-            const headerBtn = document.getElementById('wake-lock-header-btn');
+            const headerBtn = document.getElementById('wake-lock-sidebar-btn');
+            if (!headerBtn) return;
             if (active) {
-                document.getElementById('wake-icon').className = "fa-solid fa-sun text-amber-400 animate-spin-slow";
+                document.getElementById('wake-icon').className = "fa-solid fa-sun text-amber-400";
                 document.getElementById('wake-text').innerText = "Wake On";
-                document.getElementById('header-wake-icon').className = "fa-solid fa-sun text-amber-400";
-                document.getElementById('header-wake-text').innerText = "Awake On";
-                headerBtn.className = "px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition";
             } else {
                 document.getElementById('wake-icon').className = "fa-solid fa-sun text-slate-500";
                 document.getElementById('wake-text').innerText = "Wake Off";
-                document.getElementById('header-wake-icon').className = "fa-solid fa-sun text-slate-400";
-                document.getElementById('header-wake-text').innerText = "Keep Awake";
-                headerBtn.className = "px-2.5 py-1.5 rounded-xl bg-slate-800/70 border border-slate-700 text-slate-300 hover:text-amber-400 text-xs font-semibold flex items-center gap-1.5 transition";
             }
         }
 
@@ -586,27 +661,18 @@
 
         document.addEventListener('visibilitychange', async () => {
             if (document.visibilityState === 'visible') {
-                if (isWakeLockRequested || activeCallTargetUserId) {
-                    await requestWakeLock();
-                }
-                if (socket && !socket.connected) {
-                    socket.connect();
-                }
+                if (isWakeLockRequested || activeCallTargetUserId) await requestWakeLock();
+                if (socket && !socket.connected) socket.connect();
             }
         });
 
-        // Hide desktop custom context menu on outside click or press escape
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('custom-context-menu');
-            if (menu && !menu.contains(e.target)) {
-                menu.classList.add('hidden');
-            }
+            if (menu && !menu.contains(e.target)) menu.classList.add('hidden');
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                document.getElementById('custom-context-menu').classList.add('hidden');
-            }
+            if (e.key === 'Escape') document.getElementById('custom-context-menu').classList.add('hidden');
         });
 
         function hapticFeedback() {
@@ -648,9 +714,6 @@
             if ("Notification" in window) {
                 const perm = await Notification.requestPermission();
                 updateNotificationBtnUI(perm);
-                if (perm === "granted") {
-                    addSystemMessageUI("System Notifications enabled!");
-                }
             }
         }
 
@@ -663,11 +726,9 @@
             if (perm === 'granted') {
                 icon.className = "fa-solid fa-bell text-emerald-400";
                 text.innerText = "Alerts On";
-                btn.className = "px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition";
             } else if (perm === 'denied') {
                 icon.className = "fa-solid fa-bell-slash text-rose-400";
                 text.innerText = "Alerts Off";
-                btn.className = "px-2.5 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition";
             }
         }
 
@@ -695,12 +756,9 @@
                 myUserId = data.userId;
                 myUsername = data.name;
                 expiresAt = data.expiresAt;
-                messagesHistory = data.history || [];
                 
                 saveSessionLocally({ userId: myUserId, name: myUsername, expiresAt });
                 updateMyIdentityUI();
-
-                renderAllMessages();
 
                 if (expiresAt && Date.now() < expiresAt) {
                     document.getElementById('keep-session-cb').checked = true;
@@ -711,21 +769,27 @@
                 }
             });
 
-            socket.on('message', (msg) => {
-                messagesHistory.push(msg);
-                addMessageUI(msg);
-                if (msg.name !== myUsername) playNotificationSound('message');
+            socket.on('directHistoryLoaded', ({ targetUserId, history, pinned }) => {
+                if (targetUserId === activeTargetUserId) {
+                    messagesHistory = history || [];
+                    pinnedMsgId = pinned ? pinned.id : null;
+                    updatePinnedBanner(pinned);
+                    renderAllMessages();
+                }
             });
 
-            socket.on('historyUpdate', (history) => {
-                messagesHistory = history;
-                renderAllMessages();
+            socket.on('directMessage', (msg) => {
+                if (msg.userId === myUserId || msg.userId === activeTargetUserId) {
+                    messagesHistory.push(msg);
+                    addMessageUI(msg);
+                    if (msg.userId !== myUserId) playNotificationSound('message');
+                }
             });
 
-            socket.on('messageUpdated', (updatedMsg) => {
-                const idx = messagesHistory.findIndex(m => m.id === updatedMsg.id);
+            socket.on('messageUpdated', ({ msg }) => {
+                const idx = messagesHistory.findIndex(m => m.id === msg.id);
                 if (idx > -1) {
-                    messagesHistory[idx] = updatedMsg;
+                    messagesHistory[idx] = msg;
                     renderAllMessages();
                 }
             });
@@ -736,9 +800,9 @@
                 if (el) el.remove();
             });
 
-            socket.on('system', (text) => {
-                addSystemMessageUI(text);
-                playNotificationSound('system');
+            socket.on('pinnedUpdate', ({ pinned }) => {
+                pinnedMsgId = pinned ? pinned.id : null;
+                updatePinnedBanner(pinned);
             });
 
             socket.on('count', (count) => {
@@ -750,14 +814,18 @@
                 renderOnlineUsers();
             });
 
-            socket.on('typing', (name) => {
-                const indicator = document.getElementById('typing-indicator');
-                document.getElementById('typing-text').innerText = name + ' is typing...';
-                indicator.classList.remove('opacity-0');
+            socket.on('typing', ({ fromUserId, name }) => {
+                if (fromUserId === activeTargetUserId) {
+                    const indicator = document.getElementById('typing-indicator');
+                    document.getElementById('typing-text').innerText = name + ' is typing...';
+                    indicator.classList.remove('opacity-0');
+                }
             });
 
-            socket.on('stopTyping', () => {
-                document.getElementById('typing-indicator').classList.add('opacity-0');
+            socket.on('stopTyping', ({ fromUserId }) => {
+                if (fromUserId === activeTargetUserId) {
+                    document.getElementById('typing-indicator').classList.add('opacity-0');
+                }
             });
 
             socket.on('incomingCall', (data) => {
@@ -766,16 +834,6 @@
                 triggerCallVibration();
                 startTitleFlashing(data.callerName);
                 startRingtone();
-
-                if ("Notification" in window && Notification.permission === "granted") {
-                    try {
-                        activeNotification = new Notification(`📞 Incoming Call`, {
-                            body: `${data.callerName} is calling you!`,
-                            icon: "https://cdn-icons-png.flaticon.com/512/3059/3059502.png"
-                        });
-                        activeNotification.onclick = () => { window.focus(); activeNotification.close(); };
-                    } catch(e) {}
-                }
 
                 document.getElementById('incoming-caller-name').innerText = data.callerName;
                 document.getElementById('incoming-call-type-label').innerText = data.callType === 'video' ? 'Incoming Video Call...' : 'Incoming Audio Call...';
@@ -816,6 +874,27 @@
             });
         }
 
+        function selectUserForChat(targetUserId) {
+            hapticFeedback();
+            activeTargetUserId = targetUserId;
+            const targetUser = onlineUsers.find(u => u.id === targetUserId);
+
+            document.getElementById('empty-state-notice').classList.add('hidden');
+            document.getElementById('header-chat-title').innerText = targetUser ? `@ ${targetUser.name}` : "Direct Message";
+            document.getElementById('header-status-badge').classList.remove('hidden');
+            document.getElementById('call-buttons-header').classList.remove('hidden');
+            
+            const msgInput = document.getElementById('msg-input');
+            msgInput.disabled = false;
+            msgInput.placeholder = targetUser ? `Message @${targetUser.name}...` : "Type a message...";
+            document.getElementById('send-btn').disabled = false;
+
+            socket.emit('loadDirectHistory', { targetUserId });
+            renderOnlineUsers();
+            
+            if (window.innerWidth < 1024) toggleSidebar();
+        }
+
         function setReplyTo(msgId) {
             const targetMsg = messagesHistory.find(m => m.id === msgId);
             if (!targetMsg) return;
@@ -846,7 +925,7 @@
             if (targetEl) {
                 targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 targetEl.classList.remove('highlight-msg');
-                void targetEl.offsetWidth; // Trigger reflow
+                void targetEl.offsetWidth;
                 targetEl.classList.add('highlight-msg');
             }
         }
@@ -857,19 +936,15 @@
             const msg = messagesHistory.find(m => m.id === msgId);
             if (!msg) return;
 
-            const isMe = msg.userId ? (msg.userId === myUserId) : (msg.name === myUsername);
+            const isMe = msg.userId === myUserId;
             const menu = document.getElementById('custom-context-menu');
-            const deleteBtn = document.getElementById('context-delete-btn-wrapper');
+            const ownerActions = document.getElementById('context-owner-actions');
 
-            if (isMe) {
-                deleteBtn.classList.remove('hidden');
-            } else {
-                deleteBtn.classList.add('hidden');
-            }
+            if (isMe) ownerActions.classList.remove('hidden');
+            else ownerActions.classList.add('hidden');
 
-            // Position context menu directly at cursor inside viewport bounds
-            const menuWidth = 200;
-            const menuHeight = 180;
+            const menuWidth = 210;
+            const menuHeight = 220;
             let x = e.clientX;
             let y = e.clientY;
 
@@ -891,19 +966,28 @@
             if (contextMenuTargetMsgId) toggleReaction(contextMenuTargetMsgId, emoji);
         }
 
+        function contextActionPin() {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            if (contextMenuTargetMsgId) togglePinMessage(contextMenuTargetMsgId);
+        }
+
         function contextActionCopy() {
             document.getElementById('custom-context-menu').classList.add('hidden');
             const msg = messagesHistory.find(m => m.id === contextMenuTargetMsgId);
             if (msg && msg.text) {
-                try {
-                    const temp = document.createElement('textarea');
-                    temp.value = msg.text;
-                    document.body.appendChild(temp);
-                    temp.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(temp);
-                    addSystemMessageUI("Copied message to clipboard!");
-                } catch(e) {}
+                navigator.clipboard.writeText(msg.text);
+                addSystemMessageUI("Copied to clipboard!");
+            }
+        }
+
+        function contextActionEdit() {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            const msg = messagesHistory.find(m => m.id === contextMenuTargetMsgId);
+            if (msg && msg.userId === myUserId) {
+                const newText = prompt("Edit message:", msg.text);
+                if (newText !== null && newText.trim() !== "") {
+                    socket.emit('editMessage', { targetUserId: activeTargetUserId, msgId: msg.id, newText });
+                }
             }
         }
 
@@ -915,6 +999,26 @@
         function contextActionDelete() {
             document.getElementById('custom-context-menu').classList.add('hidden');
             if (contextMenuTargetMsgId) deleteMessage(contextMenuTargetMsgId);
+        }
+
+        function togglePinMessage(msgId) {
+            if (socket && activeTargetUserId && msgId) {
+                socket.emit('togglePinMessage', { targetUserId: activeTargetUserId, msgId });
+            }
+        }
+
+        function updatePinnedBanner(pinnedMsg) {
+            const banner = document.getElementById('pinned-banner');
+            if (pinnedMsg) {
+                document.getElementById('pinned-banner-text').innerText = pinnedMsg.text || "[Photo Attachment]";
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function scrollToPinnedMessage() {
+            if (pinnedMsgId) scrollToMessage(pinnedMsgId);
         }
 
         function renderAllMessages() {
@@ -929,7 +1033,7 @@
 
         function addMessageUI(data) {
             const container = document.getElementById('messages');
-            const isMe = data.userId ? (data.userId === myUserId) : (data.name === myUsername);
+            const isMe = data.userId === myUserId;
             const timeStr = new Date(data.time || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
             const readByList = data.readBy || [];
@@ -944,15 +1048,12 @@
             msgElement.setAttribute('data-msg-id', data.id);
             msgElement.className = 'flex gap-2.5 group relative animate-pop-in ' + (isMe ? 'flex-row-reverse' : 'flex-row');
 
-            // Construct Quoted Reply HTML if message is replying to another message
             let quotedReplyHTML = '';
             if (data.replyTo) {
                 let replySnippet = escapeHTML(data.replyTo.text || '');
-                if (data.replyTo.image) {
-                    replySnippet = replySnippet ? `📷 ${replySnippet}` : '📷 Photo';
-                }
+                if (data.replyTo.image) replySnippet = replySnippet ? `📷 ${replySnippet}` : '📷 Photo';
                 quotedReplyHTML = `
-                    <div onclick="scrollToMessage('${data.replyTo.id}')" class="mb-1.5 p-2 rounded-xl bg-slate-950/60 border-l-4 border-brand-400 cursor-pointer hover:bg-slate-950/90 transition text-left">
+                    <div onclick="scrollToMessage('${data.replyTo.id}')" class="mb-1.5 p-2 rounded bg-slate-950/60 border-l-4 border-brand-400 cursor-pointer hover:bg-slate-950/90 transition text-left">
                         <div class="text-[10px] font-bold text-brand-300 flex items-center gap-1">
                             <i class="fa-solid fa-reply text-[9px]"></i>
                             <span>${escapeHTML(data.replyTo.name)}</span>
@@ -964,13 +1065,15 @@
 
             let contentHTML = '';
             if (data.image) {
-                contentHTML += `<div class="mb-2 overflow-hidden rounded-xl cursor-pointer"><img src="${data.image}" onclick="openLightbox('${data.image}')" class="max-w-full max-h-60 rounded-xl hover:scale-105 transition object-cover"></div>`;
+                contentHTML += `<div class="mb-2 overflow-hidden rounded cursor-pointer"><img src="${data.image}" onclick="openLightbox('${data.image}')" class="max-w-full max-h-60 rounded hover:scale-105 transition object-cover"></div>`;
             }
             if (data.text) {
                 contentHTML += escapeHTML(data.text);
             }
+            if (data.edited) {
+                contentHTML += ` <span class="text-[9px] text-slate-400 italic" title="Edited from ${data.old_text} at ${data.edited_at}">(edited)</span>`;
+            }
 
-            // Reaction badges
             let reactionsHTML = '';
             if (data.reactions && Object.keys(data.reactions).length > 0) {
                 reactionsHTML = '<div class="flex flex-wrap gap-1 mt-1.5">';
@@ -984,37 +1087,26 @@
                 reactionsHTML += '</div>';
             }
 
-            // Quick Actions Hover Bar (Reply, Info, Emoji, Delete)
             const actionsBarHTML = `<div class="absolute top-0 ${isMe ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'} opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10">
-                <button onclick="setReplyTo('${data.id}')" title="Reply to Message" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-brand-400 text-slate-400 rounded-lg text-xs shadow-md">
+                <button onclick="setReplyTo('${data.id}')" title="Reply" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-brand-400 text-slate-400 rounded-lg text-xs shadow-md">
                     <i class="fa-solid fa-reply"></i>
                 </button>
-                <button onclick="openMessageInfoModal('${data.id}')" title="Message Info & Views" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-brand-400 text-slate-400 rounded-lg text-xs shadow-md">
+                <button onclick="openMessageInfoModal('${data.id}')" title="Info" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-brand-400 text-slate-400 rounded-lg text-xs shadow-md">
                     <i class="fa-solid fa-circle-info"></i>
                 </button>
-                <button onclick="toggleReaction('${data.id}', '❤️')" title="Quick React" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-rose-400 text-slate-400 rounded-lg text-xs shadow-md">
-                    <i class="fa-solid fa-heart"></i>
-                </button>
-                ${isMe ? `<button onclick="deleteMessage('${data.id}')" title="Delete Message" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-rose-400 text-slate-400 rounded-lg text-xs shadow-md"><i class="fa-solid fa-trash-can"></i></button>` : ''}
             </div>`;
 
-            // Status Icon for Sent Messages
             let statusIconHTML = '';
             if (isMe) {
                 if (isRead) {
-                    statusIconHTML = `<span onclick="openMessageInfoModal('${data.id}')" class="cursor-pointer text-indigo-400 text-[11px] font-semibold flex items-center gap-0.5" title="Viewed by ${readCount}">
+                    statusIconHTML = `<span onclick="openMessageInfoModal('${data.id}')" class="cursor-pointer text-indigo-400 text-[11px] font-semibold" title="Read">
                         <i class="fa-solid fa-check-double"></i>
-                        <span class="text-[9px] font-mono">${readCount}</span>
                     </span>`;
                 } else {
                     statusIconHTML = `<span onclick="openMessageInfoModal('${data.id}')" class="cursor-pointer text-slate-400 text-[11px]" title="Delivered">
                         <i class="fa-solid fa-check"></i>
                     </span>`;
                 }
-            } else {
-                statusIconHTML = `<button onclick="openMessageInfoModal('${data.id}')" title="Message Details" class="text-slate-500 hover:text-slate-300 text-[10px]">
-                    <i class="fa-solid fa-circle-info"></i>
-                </button>`;
             }
 
             msgElement.innerHTML = `
@@ -1030,13 +1122,8 @@
                         <span class="text-[10px] text-slate-500">${timeStr}</span>
                         ${statusIconHTML}
                     </div>
-                    
-                    <!-- Swipe indicator icon for mobile pull -->
-                    <div class="swipe-indicator absolute left-[-32px] top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-brand-600/80 text-white flex items-center justify-center text-[10px] opacity-0 transition-opacity">
-                        <i class="fa-solid fa-reply"></i>
-                    </div>
 
-                    <div class="msg-bubble px-3.5 py-2 rounded-2xl text-sm leading-relaxed break-words shadow-sm ${isMe ? 'bg-brand-600 text-white rounded-tr-none' : 'bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-none'} transition-transform duration-100">
+                    <div class="msg-bubble px-3.5 py-2 rounded text-sm leading-relaxed break-words shadow-sm ${isMe ? 'bg-brand-600 text-white rounded-tr-none' : 'bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-none'} transition-transform duration-100">
                         ${quotedReplyHTML}
                         ${contentHTML}
                         ${reactionsHTML}
@@ -1044,80 +1131,23 @@
                 </div>
             `;
 
-            // Attach Right Click Context Menu (Desktop)
             msgElement.addEventListener('contextmenu', (e) => handleContextMenu(e, data.id));
 
-            // Attach Swipe to Reply Gestures (Mobile / Touch Devices)
-            attachSwipeToReply(msgElement, data.id);
+            var bubble = msgElement.querySelector('.msg-bubble')
+            bubble.classList.toggle("-blur", blur);
+
+            msgElement.addEventListener("mouseenter", () => {
+                if (blur) bubble.classList.remove("-blur");
+            });
+
+            msgElement.addEventListener("mouseleave", () => {
+                if (blur) bubble.classList.add("-blur");
+            });
 
             container.appendChild(msgElement);
-            if (messageObserver && !isMe) {
-                messageObserver.observe(msgElement);
-            }
+            if (messageObserver && !isMe) messageObserver.observe(msgElement);
 
             scrollToBottom();
-        }
-
-        function attachSwipeToReply(element, msgId) {
-            const bubble = element.querySelector('.msg-bubble');
-            const indicator = element.querySelector('.swipe-indicator');
-            if (!bubble) return;
-
-            let startX = 0;
-            let startY = 0;
-            let currentX = 0;
-            let isDragging = false;
-            let isHorizontalSwipe = false;
-
-            bubble.addEventListener('touchstart', (e) => {
-                if (e.touches.length !== 1) return;
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                currentX = 0;
-                isDragging = true;
-                isHorizontalSwipe = false;
-                bubble.style.transition = 'none';
-            }, { passive: true });
-
-            bubble.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                const touchX = e.touches[0].clientX;
-                const touchY = e.touches[0].clientY;
-                const diffX = touchX - startX;
-                const diffY = touchY - startY;
-
-                // Check direction on initial movement
-                if (!isHorizontalSwipe && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 8) {
-                    isHorizontalSwipe = true;
-                }
-
-                // Drag right to reply (only trigger when swiping right)
-                if (isHorizontalSwipe && diffX > 0) {
-                    currentX = Math.min(diffX * 0.45, 75); // Dampened spring drag effect
-                    bubble.style.transform = `translateX(${currentX}px)`;
-                    
-                    if (indicator) {
-                        const opacity = Math.min(currentX / 40, 1);
-                        indicator.style.opacity = opacity.toString();
-                    }
-                }
-            }, { passive: true });
-
-            bubble.addEventListener('touchend', () => {
-                if (!isDragging) return;
-                isDragging = false;
-                bubble.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                bubble.style.transform = 'translateX(0px)';
-
-                if (indicator) {
-                    indicator.style.opacity = '0';
-                }
-
-                // Trigger reply if swiped past threshold
-                if (isHorizontalSwipe && currentX >= 40) {
-                    setReplyTo(msgId);
-                }
-            });
         }
 
         function openMessageInfoModal(msgId) {
@@ -1130,26 +1160,18 @@
             document.getElementById('info-modal-content').innerText = msg.text || (msg.image ? "[Attached Image]" : "");
 
             const readByList = msg.readBy || [];
-            document.getElementById('info-modal-read-count').innerText = `${readByList.length} user${readByList.length === 1 ? '' : 's'}`;
-            
-            const isMe = msg.userId === myUserId;
+            document.getElementById('info-modal-read-count').innerText = readByList.length;
             document.getElementById('info-modal-status-badge').innerText = readByList.length > 0 ? "Read" : "Delivered";
-            document.getElementById('info-modal-status-badge').className = readByList.length > 0 ? "text-xs font-bold text-indigo-400" : "text-xs font-bold text-emerald-400";
 
             const viewersContainer = document.getElementById('info-modal-viewers-list');
             if (readByList.length === 0) {
                 viewersContainer.innerHTML = '<p class="text-xs text-slate-500 italic py-2 text-center">No read receipts yet</p>';
             } else {
                 viewersContainer.innerHTML = readByList.map(r => {
-                    const viewTime = new Date(r.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    const viewTime = new Date(r.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     return `
-                        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950/50 border border-slate-800/80">
-                            <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded-md font-bold text-[10px] flex items-center justify-center border ${getAvatarStyle(r.name)}">
-                                    ${getAvatarIcon(r.name)}
-                                </div>
-                                <span class="text-xs font-medium text-slate-200">${escapeHTML(r.name)}</span>
-                            </div>
+                        <div class="flex items-center justify-between p-2 rounded bg-slate-950/50 border border-slate-800/80">
+                            <span class="text-xs font-medium text-slate-200">${escapeHTML(r.name)}</span>
                             <span class="text-[10px] font-mono text-slate-400">${viewTime}</span>
                         </div>
                     `;
@@ -1165,15 +1187,15 @@
 
         function toggleReaction(msgId, emoji) {
             hapticFeedback();
-            if (socket) {
-                socket.emit('toggleReaction', { msgId, emoji });
+            if (socket && activeTargetUserId) {
+                socket.emit('toggleReaction', { targetUserId: activeTargetUserId, msgId, emoji });
             }
         }
 
         function deleteMessage(msgId) {
             hapticFeedback();
-            if (socket && confirm("Delete message for everyone?")) {
-                socket.emit('deleteMessage', { msgId });
+            if (socket && activeTargetUserId && confirm("Delete message?")) {
+                socket.emit('deleteMessage', { targetUserId: activeTargetUserId, msgId });
             }
         }
 
@@ -1188,6 +1210,11 @@
 
         function handleSend(e) {
             e.preventDefault();
+            if (!activeTargetUserId) {
+                addSystemMessageUI("Please select an online contact to chat.");
+                return;
+            }
+
             startSilentAudioLoop();
             hapticFeedback();
             const input = document.getElementById('msg-input');
@@ -1196,6 +1223,7 @@
 
             if (socket) {
                 const payload = {
+                    targetUserId: activeTargetUserId,
                     text: text,
                     image: selectedImageBase64,
                     replyTo: activeReplyMsg ? {
@@ -1205,8 +1233,8 @@
                         image: activeReplyMsg.image || null
                     } : null
                 };
-                socket.emit('message', payload);
-                socket.emit('stopTyping');
+                socket.emit('directMessage', payload);
+                socket.emit('stopTyping', { targetUserId: activeTargetUserId });
             }
             
             input.value = '';
@@ -1221,28 +1249,25 @@
             document.getElementById('sidebar-overlay').classList.toggle('hidden');
         }
 
-        function toggleKeepSession(enabled) {
+        function toggleKeepSession(enabled=true) {
             if (enabled) {
                 expiresAt = Date.now() + SESSION_DURATION;
                 saveSessionLocally({ userId: myUserId, name: myUsername, expiresAt });
                 if (socket) socket.emit('updateSession', { expiresAt });
                 startCountdownUI();
-                addSystemMessageUI("Session persistence set for 3 hours.");
             } else {
                 expiresAt = null;
                 saveSessionLocally({ userId: myUserId, name: myUsername, expiresAt: null });
                 if (socket) socket.emit('updateSession', { expiresAt: null });
                 stopCountdownUI();
-                addSystemMessageUI("Session persistence disabled.");
             }
         }
 
         function extendSession() {
             expiresAt = Date.now() + SESSION_DURATION;
-            saveSessionLocally({ userId: myUserId, name: myUsername, expiresAt });
+            saveSessionLocally({ userId: myUserId, name:  document.getElementById('my-username').value  || myUsername, expiresAt });
             if (socket) socket.emit('updateSession', { expiresAt });
             startCountdownUI();
-            addSystemMessageUI("Session extended for 3 hours!");
         }
 
         function startCountdownUI() {
@@ -1259,18 +1284,28 @@
 
         function updateTimerDisplay() {
             if (!expiresAt) return stopCountdownUI();
+        
             const diff = expiresAt - Date.now();
+        
             if (diff <= 0) {
                 stopCountdownUI();
                 changeIdentity();
                 return;
             }
-            const hrs = Math.floor(diff / (1000 * 60 * 60));
-            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
-            document.getElementById('countdown-timer').innerText = 
-                String(hrs).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        
+            const monthMs = 30 * 24 * 60 * 60 * 1000;
+            const dayMs = 24 * 60 * 60 * 1000;
+            const hourMs = 60 * 60 * 1000;
+            const minuteMs = 60 * 1000;
+        
+            const months = Math.floor(diff / monthMs);
+            const days = Math.floor((diff % monthMs) / dayMs);
+            const hrs = Math.floor((diff % dayMs) / hourMs);
+            const mins = Math.floor((diff % hourMs) / minuteMs);
+            const secs = Math.floor((diff % minuteMs) / 1000);
+        
+            document.getElementById("countdown-timer").innerText =
+                `${months}m ${days}d ${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
         }
 
         function changeIdentity() {
@@ -1278,13 +1313,14 @@
         }
 
         function updateMyIdentityUI() {
-            document.getElementById('my-username').innerText = myUsername;
+            document.getElementById('my-username').value = myUsername;
             const avatar = document.getElementById('user-avatar');
-            avatar.className = 'w-9 h-9 rounded-xl font-bold flex items-center justify-center text-xs shrink-0 border ' + getAvatarStyle(myUsername);
+            avatar.className = 'w-9 h-9 rounded font-bold flex items-center justify-center text-xs shrink-0 border ' + getAvatarStyle(myUsername);
             avatar.innerText = getAvatarIcon(myUsername);
         }
 
         async function initiateCall(targetUserId, callType = 'video') {
+            if (!targetUserId) return;
             const targetUser = onlineUsers.find(u => u.id === targetUserId);
             if (!targetUser) return;
 
@@ -1392,7 +1428,7 @@
                     }
                 }
             } catch(err) {
-                addSystemMessageUI("Call media error: " + err.message);
+                addSystemMessageUI("Call error: " + err.message);
                 declineIncomingCall();
             }
         }
@@ -1500,8 +1536,8 @@
             if (track) {
                 track.enabled = !track.enabled;
                 document.getElementById('mute-audio-btn').className = track.enabled ? 
-                    'p-2.5 bg-slate-800 text-slate-200 rounded-xl text-xs' : 
-                    'p-2.5 bg-rose-600/30 text-rose-300 rounded-xl text-xs border border-rose-500/50';
+                    'p-2.5 bg-slate-800 text-slate-200 rounded text-xs' : 
+                    'p-2.5 bg-rose-600/30 text-rose-300 rounded text-xs border border-rose-500/50';
             }
         }
 
@@ -1511,8 +1547,8 @@
             if (track) {
                 track.enabled = !track.enabled;
                 document.getElementById('mute-video-btn').className = track.enabled ? 
-                    'p-2.5 bg-slate-800 text-slate-200 rounded-xl text-xs' : 
-                    'p-2.5 bg-rose-600/30 text-rose-300 rounded-xl text-xs border border-rose-500/50';
+                    'p-2.5 bg-slate-800 text-slate-200 rounded text-xs' : 
+                    'p-2.5 bg-rose-600/30 text-rose-300 rounded text-xs border border-rose-500/50';
             }
         }
 
@@ -1538,22 +1574,57 @@
             document.getElementById('sound-text').innerText = audioEnabled ? "Sound On" : "Muted";
         }
 
+        document.addEventListener('DOMContentLoaded', ()=>{
+            document.getElementById('blur-icon').className = blur ? "fa-solid fa-eye-slash text-brand-400" : "fa-solid fa-eye text-slate-500";
+            document.getElementById("blur-text").innerText =
+                blur ? "Blur On" : "Blur Off";
+
+
+        })
+
+
+        function applyBlurState() {
+            document.querySelectorAll(".msg-bubble").forEach(d => {
+                d.classList.toggle("-blur", blur);
+                console.log(blur)
+            });
+        
+            document.getElementById("blur-text").innerText =
+                blur ? "Blur On" : "Blur Off";
+        
+            document.getElementById("blur-icon").className =
+                blur
+                    ? "fa-solid fa-eye-slash text-brand-400"
+                    : "fa-solid fa-eye text-slate-500";
+        }
+        
+        function toggleBlur() {
+            blur = !blur;
+            localStorage.setItem("blur", blur);
+            applyBlurState();
+        }
+
         function renderOnlineUsers() {
             const container = document.getElementById('online-users-list');
-            document.getElementById('user-count-badge').innerText = onlineUsers.length;
-            container.innerHTML = onlineUsers.map(u => {
-                const isMe = u.id === myUserId;
-                return '<div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-800/60 transition group">' +
-                       '<div class="flex items-center gap-2.5 overflow-hidden">' +
-                       '<div class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 border ' + getAvatarStyle(u.name) + '">' + getAvatarIcon(u.name) + '</div>' +
-                       '<span class="text-xs text-slate-300 font-medium truncate ' + (isMe ? 'text-brand-400 font-semibold' : '') + '">' + escapeHTML(u.name) + (isMe ? ' (You)' : '') + '</span>' +
-                       '</div>' +
-                       (isMe ? '<span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>' :
-                       '<div class="flex items-center gap-1">' +
-                       '<button onclick="initiateCall(\''+ u.id + '\', \'audio\')" title="Audio Call" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg"><i class="fa-solid fa-phone text-xs"></i></button>' +
-                       '<button onclick="initiateCall(\'' + u.id + '\', \'video\')" title="Video Call" class="p-1.5 text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg"><i class="fa-solid fa-video text-xs"></i></button>' +
-                       '</div>') +
-                       '</div>';
+            const otherUsers = onlineUsers.filter(u => u.id !== myUserId);
+            document.getElementById('user-count-badge').innerText = otherUsers.length;
+
+            if (otherUsers.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-500 italic p-3 text-center">No other peers online</div>';
+                return;
+            }
+
+            container.innerHTML = otherUsers.map(u => {
+                const isSelected = u.id === activeTargetUserId;
+                return `<div onclick="selectUserForChat('${u.id}')" class="flex items-center justify-between p-2.5 rounded cursor-pointer transition ${isSelected ? 'bg-brand-600/20 border border-brand-500/40 text-brand-300' : 'hover:bg-slate-800/60 text-slate-300'}">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <div class="w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 border ${getAvatarStyle(u.name)}">
+                            ${getAvatarIcon(u.name)}
+                        </div>
+                        <span class="text-xs font-medium truncate">${escapeHTML(u.name)}</span>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+                </div>`;
             }).join('');
         }
 
@@ -1621,9 +1692,9 @@
 
         const input = document.getElementById('msg-input');
         input.addEventListener('input', () => {
-            if (socket) socket.emit('typing');
+            if (socket && activeTargetUserId) socket.emit('typing', { targetUserId: activeTargetUserId });
             clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => socket && socket.emit('stopTyping'), 1200);
+            typingTimeout = setTimeout(() => socket && activeTargetUserId && socket.emit('stopTyping', { targetUserId: activeTargetUserId }), 1200);
         });
 
         if ("Notification" in window) {

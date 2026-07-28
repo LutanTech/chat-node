@@ -21,8 +21,8 @@ const animals = [
 ];
 
 const users = {};
-const history = [];
-
+const directHistories = {};
+const pinnedMessages = {};
 const pendingDisconnects = {};
 const DISCONNECT_GRACE_MS = 25000;
 
@@ -30,9 +30,18 @@ function randomName() {
     return animals[Math.floor(Math.random() * animals.length)] + "-" + Math.floor(1000 + Math.random() * 9000);
 }
 
-function save(msg) {
-    history.push(msg);
-    if (history.length > 100) history.shift();
+function getChatKey(id1, id2) {
+    return [id1, id2].sort().join("_");
+}
+
+function saveDirectMessage(chatKey, msg) {
+    if (!directHistories[chatKey]) {
+        directHistories[chatKey] = [];
+    }
+    directHistories[chatKey].push(msg);
+    if (directHistories[chatKey].length > 100) {
+        directHistories[chatKey].shift();
+    }
 }
 
 app.use(express.static(path.join(__dirname, "public")));
@@ -78,16 +87,24 @@ io.on("connection", (socket) => {
         socket.emit("sessionReady", {
             userId: currentUserId,
             name,
-            expiresAt,
-            history
+            expiresAt
         });
 
         io.emit("count", Object.keys(users).length);
         io.emit("usersUpdate", Object.values(users));
+    });
 
-        if (!isReconnecting) {
-            io.emit("system", `${name} joined the room`);
-        }
+    socket.on("loadDirectHistory", ({ targetUserId }) => {
+        if (!currentUserId || !targetUserId) return;
+        const chatKey = getChatKey(currentUserId, targetUserId);
+        const history = directHistories[chatKey] || [];
+        const pinned = pinnedMessages[chatKey] || null;
+
+        socket.emit("directHistoryLoaded", {
+            targetUserId,
+            history,
+            pinned
+        });
     });
 
     socket.on("updateSession", (data) => {
@@ -110,25 +127,26 @@ io.on("connection", (socket) => {
         socket.emit("sessionReady", {
             userId: currentUserId,
             name,
-            expiresAt: null,
-            history: []
+            expiresAt: null
         });
 
         io.emit("usersUpdate", Object.values(users));
-        io.emit("system", `${oldName} changed identity to ${name}`);
     });
 
-    socket.on("message", (payload) => {
-        if (!payload) return;
+    socket.on("directMessage", (payload) => {
+        if (!payload || !payload.targetUserId) return;
+        const targetUserId = payload.targetUserId;
         const text = typeof payload === 'string' ? payload.trim() : (payload.text || '').trim();
         const image = typeof payload === 'object' ? payload.image : null;
         const replyTo = typeof payload === 'object' && payload.replyTo ? payload.replyTo : null;
 
         if (!text && !image) return;
 
+        const chatKey = getChatKey(currentUserId, targetUserId);
         const msg = {
             id: Date.now() + Math.random().toString(36).substring(2, 5),
             userId: currentUserId,
+            targetUserId,
             name,
             text,
             image,
@@ -140,14 +158,67 @@ io.on("connection", (socket) => {
             } : null,
             time: Date.now(),
             readBy: [],
-            reactions: {}
+            reactions: {},
+            edited: false
         };
-        save(msg);
-        io.emit("message", msg);
+
+        saveDirectMessage(chatKey, msg);
+
+        socket.emit("directMessage", msg);
+
+        const targetUser = users[targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("directMessage", msg);
+        }
     });
 
-    socket.on("markRead", (msgIds) => {
-        if (!Array.isArray(msgIds) || !currentUserId) return;
+    socket.on("editMessage", ({ targetUserId, msgId, newText }) => {
+        if (!currentUserId || !targetUserId || !msgId || !newText) return;
+        const chatKey = getChatKey(currentUserId, targetUserId);
+        const history = directHistories[chatKey] || [];
+        const msg = history.find(m => m.id === msgId);
+
+        if (msg && msg.userId === currentUserId) {
+            msg.old_text = msg.text
+            msg.text = newText.trim();
+            msg.edited = true;
+            msg.edited_at = new Date().toLocaleString();
+
+            socket.emit("messageUpdated", { chatKey, msg });
+            const targetUser = users[targetUserId];
+            if (targetUser) {
+                io.to(targetUser.socketId).emit("messageUpdated", { chatKey, msg });
+            }
+        }
+    });
+
+    socket.on("togglePinMessage", ({ targetUserId, msgId }) => {
+        if (!currentUserId || !targetUserId) return;
+        const chatKey = getChatKey(currentUserId, targetUserId);
+        const history = directHistories[chatKey] || [];
+        const msg = history.find(m => m.id === msgId);
+
+        if (!msg) return;
+
+        if (pinnedMessages[chatKey] && pinnedMessages[chatKey].id === msgId) {
+            delete pinnedMessages[chatKey];
+        } else {
+            pinnedMessages[chatKey] = msg;
+        }
+
+        const currentPinned = pinnedMessages[chatKey] || null;
+
+        socket.emit("pinnedUpdate", { chatKey, pinned: currentPinned });
+        const targetUser = users[targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("pinnedUpdate", { chatKey, pinned: currentPinned });
+        }
+    });
+
+    socket.on("markRead", ({ targetUserId, msgIds }) => {
+        if (!Array.isArray(msgIds) || !currentUserId || !targetUserId) return;
+        const chatKey = getChatKey(currentUserId, targetUserId);
+        const history = directHistories[chatKey] || [];
         let updated = false;
 
         msgIds.forEach(msgId => {
@@ -166,13 +237,30 @@ io.on("connection", (socket) => {
         });
 
         if (updated) {
-            io.emit("historyUpdate", history);
+            socket.emit("directHistoryLoaded", {
+                targetUserId,
+                history,
+                pinned: pinnedMessages[chatKey] || null
+            });
+
+            const targetUser = users[targetUserId];
+            if (targetUser) {
+                io.to(targetUser.socketId).emit("directHistoryLoaded", {
+                    targetUserId: currentUserId,
+                    history,
+                    pinned: pinnedMessages[chatKey] || null
+                });
+            }
         }
     });
 
-    socket.on("toggleReaction", ({ msgId, emoji }) => {
+    socket.on("toggleReaction", ({ targetUserId, msgId, emoji }) => {
+        if (!currentUserId || !targetUserId || !msgId || !emoji) return;
+        const chatKey = getChatKey(currentUserId, targetUserId);
+        const history = directHistories[chatKey] || [];
         const msg = history.find(m => m.id === msgId);
-        if (msg && emoji) {
+
+        if (msg) {
             if (!msg.reactions) msg.reactions = {};
             if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
 
@@ -184,17 +272,33 @@ io.on("connection", (socket) => {
                 msg.reactions[emoji].push({ userId: currentUserId, name });
             }
 
-            io.emit("messageUpdated", msg);
+            socket.emit("messageUpdated", { chatKey, msg });
+            const targetUser = users[targetUserId];
+            if (targetUser) {
+                io.to(targetUser.socketId).emit("messageUpdated", { chatKey, msg });
+            }
         }
     });
 
-    socket.on("deleteMessage", ({ msgId }) => {
+    socket.on("deleteMessage", ({ targetUserId, msgId }) => {
+        if (!currentUserId || !targetUserId || !msgId) return;
+        const chatKey = getChatKey(currentUserId, targetUserId);
+        const history = directHistories[chatKey] || [];
         const index = history.findIndex(m => m.id === msgId);
+
         if (index > -1) {
             const targetMsg = history[index];
-            if (targetMsg.userId === currentUserId || targetMsg.name === name) {
+            if (targetMsg.userId === currentUserId) {
                 history.splice(index, 1);
-                io.emit("messageDeleted", { msgId });
+                if (pinnedMessages[chatKey] && pinnedMessages[chatKey].id === msgId) {
+                    delete pinnedMessages[chatKey];
+                }
+
+                socket.emit("messageDeleted", { targetUserId, msgId });
+                const targetUser = users[targetUserId];
+                if (targetUser) {
+                    io.to(targetUser.socketId).emit("messageDeleted", { targetUserId: currentUserId, msgId });
+                }
             }
         }
     });
@@ -249,27 +353,29 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("typing", () => {
-        socket.broadcast.emit("typing", name);
+    socket.on("typing", ({ targetUserId }) => {
+        const targetUser = users[targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("typing", { fromUserId: currentUserId, name });
+        }
     });
 
-    socket.on("stopTyping", () => {
-        socket.broadcast.emit("stopTyping");
+    socket.on("stopTyping", ({ targetUserId }) => {
+        const targetUser = users[targetUserId];
+        if (targetUser) {
+            io.to(targetUser.socketId).emit("stopTyping", { fromUserId: currentUserId });
+        }
     });
 
     socket.on("disconnect", () => {
         if (!currentUserId) return;
 
         pendingDisconnects[currentUserId] = setTimeout(() => {
-            const disconnectedUser = users[currentUserId];
             delete users[currentUserId];
             delete pendingDisconnects[currentUserId];
 
             io.emit("count", Object.keys(users).length);
             io.emit("usersUpdate", Object.values(users));
-            if (disconnectedUser) {
-                io.emit("system", `${disconnectedUser.name} left the room`);
-            }
         }, DISCONNECT_GRACE_MS);
     });
 });
