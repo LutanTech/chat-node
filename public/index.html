@@ -159,8 +159,8 @@
                         <i class="fa-solid fa-ghost text-lg"></i>
                     </div>
                     <div>
-                        <h1 class="font-bold text-slate-100 tracking-wide text-base">AnonChat 1-on-1</h1>
-                        <p class="text-[11px] text-slate-400 font-medium">Direct Peer Messaging</p>
+                        <h1 class="font-bold text-slate-100 tracking-wide text-base">AnonChat</h1>
+                        <p class="text-[11px] text-slate-400 font-medium">Direct Peer Messaging <i> <br> By <a class="text-blue-600 underline" href="https://lutan-tech.is-great.org/?utm_source=anonchat&utm_medium=sidebar_link"> [ Lutan ] </a></i></p>
                     </div>
                 </div>
                 <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-200 p-2 rounded bg-slate-800/50">
@@ -168,7 +168,7 @@
                 </button>
             </div>
 
-            <div class="p-3.5 mx-3 my-3 rounded-2xl bg-slate-800/50 border border-slate-700/50 flex flex-col gap-3">
+            <div class="p-3.5 mx-3 my-3 rounded-sm bg-slate-800/50 border border-slate-700/50 flex flex-col gap-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2.5 overflow-hidden">
                         <div id="user-avatar" class="w-9 h-9 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold flex items-center justify-center text-xs shrink-0">
@@ -184,23 +184,6 @@
                     </button>
                 </div>
 
-                <div class="pt-2 border-t border-slate-700/40 flex flex-col gap-2">
-                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
-                        <input type="checkbox" id="keep-session-cb" onchange="toggleKeepSession(this.checked)" class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-brand-600 focus:ring-brand-500 accent-brand-600">
-                        <span>Keep session for 3 hours</span>
-                    </label>
-
-                    <div id="session-countdown-wrapper" class="hidden flex items-center justify-between bg-slate-950/70 rounded px-2.5 py-1.5 border border-slate-800 text-xs">
-                        <div class="flex items-center gap-1.5 text-slate-400">
-                            <i class="fa-regular fa-clock text-brand-400" id="timer-icon"></i>
-                            <span id="countdown-timer" class="font-mono text-slate-200 font-medium">00:00:00</span>
-                        </div>
-                        <button onclick="extendSession()" title="Extend persistent session" class="px-2 py-0.5 rounded-lg bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/30 text-[11px] font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-plus text-[9px]"></i>
-                            <span>Extend</span>
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <div class="flex-1 overflow-y-auto px-3 py-1">
@@ -356,10 +339,9 @@
                                 <i class="fa-solid fa-image text-base"></i>
                             </button>
 
-                            <input id="msg-input" type="text" placeholder="Select a user to chat..." disabled autocomplete="off" class="w-full bg-slate-950 text-slate-100 placeholder-slate-500 text-sm rounded-2xl pl-16 pr-3 py-3 border border-slate-800 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition disabled:opacity-50">
+                            <input id="msg-input" type="text" placeholder="Select a user to chat..." disabled autocomplete="off" class="w-full bg-slate-950 text-slate-100 placeholder-slate-500 text-sm rounded-sm pl-16 pr-3 py-3 border border-slate-800 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition disabled:opacity-50">
                         </div>
-                        <button type="submit" id="send-btn" disabled class="px-4 py-3 bg-brand-600 hover:bg-brand-500 active:scale-95 text-white rounded-2xl text-sm font-semibold transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5 shrink-0 disabled:opacity-50">
-                            <span>Send</span>
+                        <button type="submit" id="send-btn" disabled class="px-4 py-3 bg-brand-600 hover:bg-brand-500 active:scale-95 text-white rounded-sm text-sm font-semibold transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5 shrink-0 disabled:opacity-50">
                             <i class="fa-solid fa-paper-plane text-xs"></i>
                         </button>
                     </form>
@@ -368,8 +350,116 @@
         </main>
     </div>
 
+    <!-- Forward Message Modal -->
+    <div id="forward-modal"
+    class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+
+    <div class="w-full sm:max-w-md bg-slate-900 border border-slate-800 rounded-t-sm sm:rounded-sm shadow-2xl animate-pop-in overflow-hidden">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+
+            <div>
+                <h3 class="font-bold text-slate-100 text-lg">
+                    Forward Message
+                </h3>
+
+                <p class="text-xs text-slate-500">
+                    Select one or more recipients
+                </p>
+            </div>
+
+            <button onclick="closeForwardModal()"
+                class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+        <!-- Search -->
+        <div class="p-4 border-b border-slate-800">
+
+            <div class="relative">
+
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+
+                <input
+                    id="forward-search"
+                    type="text"
+                    placeholder="Search users..."
+                    oninput="filterForwardUsers()"
+                    class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-200 outline-none focus:border-brand-500">
+
+            </div>
+
+        </div>
+
+        <!-- Users -->
+        <div id="forward-users-list"
+            class="max-h-[360px] overflow-y-auto">
+
+            <!-- Example -->
+
+            <button onclick="toggleForwardUser('usr123')"
+                class="forward-user-btn w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 transition">
+
+                <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+
+                <div class="flex-1 text-left">
+
+                    <div class="text-sm font-semibold text-slate-100">
+                        Lion 8421
+                    </div>
+
+                    <div class="text-xs text-emerald-400">
+                        Online
+                    </div>
+
+                </div>
+
+                <div class="forward-check w-6 h-6 rounded-full border-2 border-slate-600 flex items-center justify-center">
+
+                    <i class="fa-solid fa-check text-[10px] hidden"></i>
+
+                </div>
+
+            </button>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-slate-800 p-4 flex gap-3">
+
+            <button
+                onclick="closeForwardModal()"
+                class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition">
+
+                Cancel
+
+            </button>
+
+            <button
+                id="forward-send-btn"
+                onclick="sendForward()"
+                disabled
+                class="flex-1 py-3 rounded-xl bg-brand-600 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold transition">
+
+                <i class="fa-solid fa-share mr-2"></i>
+
+                Forward
+
+            </button>
+
+        </div>
+
+    </div>
+
+    </div>
+
     <!-- Comprehensive Context Menu -->
-    <div id="custom-context-menu" class="hidden fixed z-50 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl py-1.5 w-52 animate-pop-in backdrop-blur-xl">
+    <div id="custom-context-menu" class="hidden fixed z-50 bg-slate-900 border border-slate-700/80 rounded-sm shadow-2xl py-1.5 w-52 animate-pop-in backdrop-blur-xl">
         <div class="px-2 py-1 flex items-center justify-around border-b border-slate-800 mb-1">
             <button onclick="contextActionReact('❤️')" class="p-1 hover:bg-slate-800 rounded text-sm">❤️</button>
             <button onclick="contextActionReact('👍')" class="p-1 hover:bg-slate-800 rounded text-sm">👍</button>
@@ -382,6 +472,11 @@
             <i class="fa-solid fa-reply text-brand-400 w-4 text-center"></i>
             <span>Reply</span>
         </button>
+        <button onclick="contextActionForward()" class="w-full px-3.5 py-1.5 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
+            <i class="fa-solid fa-share text-brand-400 w-4 text-center"></i>
+            <span>Forward</span>
+        </button>
+        
         <button onclick="contextActionPin()" class="w-full px-3.5 py-1.5 text-left text-xs text-slate-200 hover:bg-brand-600 hover:text-white flex items-center gap-2.5 transition">
             <i class="fa-solid fa-thumbtack text-amber-400 w-4 text-center"></i>
             <span>Pin Message</span>
@@ -408,7 +503,7 @@
 
     <!-- Message Info Modal -->
     <div id="message-info-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl flex flex-col gap-4 animate-pop-in">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-sm p-5 shadow-2xl flex flex-col gap-4 animate-pop-in">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded bg-brand-500/20 text-brand-400 flex items-center justify-center text-sm font-bold">
@@ -421,7 +516,7 @@
                 </button>
             </div>
 
-            <div class="bg-slate-950/70 border border-slate-800 p-3 rounded-2xl">
+            <div class="bg-slate-950/70 border border-slate-800 p-3 rounded-sm">
                 <div class="flex items-center justify-between mb-1.5">
                     <span id="info-modal-sender" class="text-xs font-bold text-brand-400">Sender</span>
                     <span id="info-modal-time" class="text-[10px] text-slate-500 font-mono">00:00 AM</span>
@@ -430,11 +525,11 @@
             </div>
 
             <div class="grid grid-cols-2 gap-2 text-center">
-                <div class="p-2.5 bg-slate-800/40 border border-slate-800 rounded-2xl">
+                <div class="p-2.5 bg-slate-800/40 border border-slate-800 rounded-sm">
                     <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">Status</span>
                     <span id="info-modal-status-badge" class="text-xs font-bold text-emerald-400">Sent</span>
                 </div>
-                <div class="p-2.5 bg-slate-800/40 border border-slate-800 rounded-2xl">
+                <div class="p-2.5 bg-slate-800/40 border border-slate-800 rounded-sm">
                     <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">Read Receipts</span>
                     <span id="info-modal-read-count" class="text-xs font-bold text-indigo-400">0</span>
                 </div>
@@ -456,9 +551,29 @@
         </div>
     </div>
 
+    <div id="edited-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-sm p-5 shadow-2xl flex flex-col gap-4 animate-pop-in">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded bg-brand-500/20 text-brand-400 flex items-center justify-center text-sm font-bold">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-100 text-base">Edit Info</h3>
+                </div>
+                <button onclick="closeMessageEditedModal()" class="p-1.5 text-slate-400 hover:text-slate-200 rounded bg-0000">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div  class="gap-5 flex flex-col  ">
+                <div  class="text-sm">Edited From: <span  class="text-green-500"  id="edited-from">Loading</span></div> 
+                <div  class="text-sm">Edited At: <span  id="edited-at"  class="text-green-500"> 00:00:00 </span></div> 
+            </div>
+        </div>
+    </div>
+
     <!-- Incoming Call Modal -->
     <div id="incoming-call-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col items-center justify-center p-4">
-        <div class="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center shadow-2xl flex flex-col items-center">
+        <div class="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-sm p-6 text-center shadow-2xl flex flex-col items-center">
             <div class="w-20 h-20 rounded-full bg-brand-600/20 border-2 border-brand-500 flex items-center justify-center text-brand-400 text-3xl mb-4">
                 <i class="fa-solid fa-phone-volume" id="incoming-call-type-icon"></i>
             </div>
@@ -558,6 +673,10 @@
         let silentAudioCtx = null;
         let messageObserver = null;
         let blur = localStorage.getItem("blur") === "true";
+        let forwardingMessage = null;
+        let selectedForwardUsers = [];
+        let lastUser = localStorage.getItem('last_user') || '';
+        let stack_used = false
 
         const RTC_CONFIG = {
             iceServers: [
@@ -761,12 +880,11 @@
                 updateMyIdentityUI();
 
                 if (expiresAt && Date.now() < expiresAt) {
-                    document.getElementById('keep-session-cb').checked = true;
                     startCountdownUI();
                 } else {
-                    document.getElementById('keep-session-cb').checked = false;
                     stopCountdownUI();
                 }
+                toggleKeepSession(true)
             });
 
             socket.on('directHistoryLoaded', ({ targetUserId, history, pinned }) => {
@@ -874,8 +992,7 @@
             });
         }
 
-        function selectUserForChat(targetUserId) {
-            hapticFeedback();
+        function selectUserForChat(targetUserId, auto=false) {
             activeTargetUserId = targetUserId;
             const targetUser = onlineUsers.find(u => u.id === targetUserId);
 
@@ -890,9 +1007,15 @@
             document.getElementById('send-btn').disabled = false;
 
             socket.emit('loadDirectHistory', { targetUserId });
+
+            lastUser = localStorage.setItem('last_user', targetUserId)
+
             renderOnlineUsers();
             
-            if (window.innerWidth < 1024) toggleSidebar();
+            if (window.innerWidth < 1024 && !auto){ toggleSidebar();
+            }
+
+
         }
 
         function setReplyTo(msgId) {
@@ -961,6 +1084,11 @@
             if (contextMenuTargetMsgId) setReplyTo(contextMenuTargetMsgId);
         }
 
+        function contextActionForward() {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            if (contextMenuTargetMsgId) openForwardModal(contextMenuTargetMsgId);
+        }
+
         function contextActionReact(emoji) {
             document.getElementById('custom-context-menu').classList.add('hidden');
             if (contextMenuTargetMsgId) toggleReaction(contextMenuTargetMsgId, emoji);
@@ -1026,9 +1154,65 @@
             container.innerHTML = '';
             unreadMessageIds.clear();
 
-            messagesHistory.forEach(msg => {
-                addMessageUI(msg);
-            });
+            if(messagesHistory == '' || messagesHistory.length == 0){
+                container.classList.add('flex')
+                container.innerHTML = '<div class="emptyMessage flex-col" style="display:flex; gap:9px; align-items:center; justify-content:center;  margin:auto; margin-top:20%"> <i class="fas fa-message text-4xl text-slate-500"></i> <i class="text-sm text-slate-500"> Start Messaging </i></div>'
+            }  else{
+            
+                messagesHistory.forEach(msg => {
+                    addMessageUI(msg);
+                });
+                if(container.querySelector('.emptyMessage')){
+                    container.querySelector('.emptyMessage').innerHTML = ''
+                }
+            }
+        }
+
+        function enableSwipeReply(element, messageId) {
+            let startX = 0;
+            let startY = 0;
+            let currentX = 0;
+            let dragging = false;
+            let replied = false;
+        
+            const bubble = element.querySelector(".msg-bubble");
+        
+            bubble.addEventListener("touchstart", (e) => {
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                dragging = true;
+                replied = false;
+                bubble.style.transition = "none";
+            }, { passive: true });
+        
+            bubble.addEventListener("touchmove", (e) => {
+                if (!dragging) return;
+        
+                const touch = e.touches[0];
+                currentX = touch.clientX - startX;
+                const currentY = Math.abs(touch.clientY - startY);
+        
+                if (currentY > Math.abs(currentX)) return;
+        
+                const translate = Math.max(-80, Math.min(80, currentX));
+                bubble.style.transform = `translateX(${translate}px)`;
+        
+                if (Math.abs(currentX) > 70 && !replied) {
+                    replied = true;
+                    navigator.vibrate?.(30);
+                    setReplyTo(messageId);
+                }
+            }, { passive: true });
+        
+            function reset() {
+                dragging = false;
+                bubble.style.transition = "transform .2s ease";
+                bubble.style.transform = "translateX(0)";
+            }
+        
+            bubble.addEventListener("touchend", reset);
+            bubble.addEventListener("touchcancel", reset);
         }
 
         function addMessageUI(data) {
@@ -1071,8 +1255,16 @@
                 contentHTML += escapeHTML(data.text);
             }
             if (data.edited) {
-                contentHTML += ` <span class="text-[9px] text-slate-400 italic" title="Edited from ${data.old_text} at ${data.edited_at}">(edited)</span>`;
+                contentHTML += `
+                            <span
+                                class="text-[9px] text-slate-400 italic cursor-pointer"
+                                title="Click to view previous message" onclick='showEditedData(${JSON.stringify(data.old_text)}, ${JSON.stringify(data.edited_at)})'>
+                                [ edited ]
+                            </span>
+                        `;
             }
+
+
 
             let reactionsHTML = '';
             if (data.reactions && Object.keys(data.reactions).length > 0) {
@@ -1094,19 +1286,34 @@
                 <button onclick="openMessageInfoModal('${data.id}')" title="Info" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-brand-400 text-slate-400 rounded-lg text-xs shadow-md">
                     <i class="fa-solid fa-circle-info"></i>
                 </button>
+                <button onclick="openForwardModal('${data.id}')" title="Forward" class="p-1.5 bg-slate-800/90 border border-slate-700 hover:text-brand-400 text-slate-400 rounded-lg text-xs shadow-md">
+                    <i class="fa-solid fa-share"></i>
+                </button>
             </div>`;
 
             let statusIconHTML = '';
             if (isMe) {
                 if (isRead) {
-                    statusIconHTML = `<span onclick="openMessageInfoModal('${data.id}')" class="cursor-pointer text-indigo-400 text-[11px] font-semibold" title="Read">
-                        <i class="fa-solid fa-check-double"></i>
+                    statusIconHTML = `<span onclick="openMessageInfoModal('${data.id}')" class="cursor-pointer relative flex text-indigo-400 text-[11px] font-semibold" title="Read">
+                        <i class="fa-solid fa-check"></i>
+                        <i class="fa-solid fa-check absolute" style="right:-5px; bottom:0; z-index:9"></i>
                     </span>`;
                 } else {
                     statusIconHTML = `<span onclick="openMessageInfoModal('${data.id}')" class="cursor-pointer text-slate-400 text-[11px]" title="Delivered">
                         <i class="fa-solid fa-check"></i>
                     </span>`;
                 }
+            }
+
+            let forwardedHTML = "";
+
+            if (data.forwarded) {
+                forwardedHTML = `
+                    <div class="flex items-center gap-1 text-[10px] italic text-slate-400 mb-1">
+                        <i class="fa-solid fa-share"></i>
+                        <span>Forwarded</span>
+                    </div>
+                `;
             }
 
             msgElement.innerHTML = `
@@ -1124,6 +1331,7 @@
                     </div>
 
                     <div class="msg-bubble px-3.5 py-2 rounded text-sm leading-relaxed break-words shadow-sm ${isMe ? 'bg-brand-600 text-white rounded-tr-none' : 'bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-none'} transition-transform duration-100">
+                        ${forwardedHTML}
                         ${quotedReplyHTML}
                         ${contentHTML}
                         ${reactionsHTML}
@@ -1144,10 +1352,28 @@
                 if (blur) bubble.classList.add("-blur");
             });
 
+            msgElement.addEventListener("dblclick", () => {
+                setReplyTo(data.id);
+                
+            });
+
             container.appendChild(msgElement);
+
+            enableSwipeReply(msgElement, data.id);
             if (messageObserver && !isMe) messageObserver.observe(msgElement);
 
             scrollToBottom();
+        }
+
+        function showEditedData(oldText, editedAt) {
+            document.getElementById("edited-from").textContent = oldText || "Unknown";
+            document.getElementById("edited-at").textContent = editedAt || "Unknown";
+        
+            document.getElementById("edited-modal").classList.remove("hidden");
+        }
+        
+        function closeMessageEditedModal() {
+            document.getElementById("edited-modal").classList.add("hidden");
         }
 
         function openMessageInfoModal(msgId) {
@@ -1185,6 +1411,78 @@
             document.getElementById('message-info-modal').classList.add('hidden');
         }
 
+        function sendForward() {
+
+            selectedForwardUsers.forEach(userId => {
+        
+                socket.emit("forwardMessage", {
+                    targetUserId: userId,
+                    message: forwardingMessage
+                });
+        
+            });
+        
+            closeForwardModal();
+        }
+
+        function openForwardModal(msgId) {
+            console.log(msgId)
+            forwardingMessage = messagesHistory.find(m => m.id === msgId);
+            if (!forwardingMessage) return;
+        
+            selectedForwardUsers = [];
+        
+            const list = document.getElementById("forward-users-list");
+            list.innerHTML = "";
+        
+            onlineUsers
+                .filter(u => u.id !== myUserId)
+                .forEach(user => {
+        
+                    list.innerHTML += `
+                        <button
+                            onclick="toggleForwardUser('${user.id}', this)"
+                            class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 transition">
+        
+                            <div class="w-10 h-10 rounded-xl ${getAvatarStyle(user.name)} flex items-center justify-center">
+                                ${getAvatarIcon(user.name)}
+                            </div>
+        
+                            <div class="flex-1 text-left">
+                                <div class="font-medium">${escapeHTML(user.name)}</div>
+                            </div>
+        
+                            <i class="fa-solid fa-circle text-slate-600"></i>
+        
+                        </button>
+                    `;
+                });
+        
+            document.getElementById("forward-modal").classList.remove("hidden");
+        }
+       
+        function toggleForwardUser(userId, btn) {
+
+            const index = selectedForwardUsers.indexOf(userId);
+        
+            if (index === -1) {
+                selectedForwardUsers.push(userId);
+                btn.querySelector("i").className =
+                    "fa-solid fa-circle-check text-brand-500";
+            } else {
+                selectedForwardUsers.splice(index, 1);
+                btn.querySelector("i").className =
+                    "fa-solid fa-circle text-slate-600";
+            }
+        
+            document.getElementById("forward-send-btn").disabled =
+                selectedForwardUsers.length === 0;
+        }
+
+        function closeForwardModal() {
+            document.getElementById("forward-modal").classList.add("hidden");
+        }
+
         function toggleReaction(msgId, emoji) {
             hapticFeedback();
             if (socket && activeTargetUserId) {
@@ -1220,7 +1518,13 @@
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
             if (!text && !selectedImageBase64) return;
+            const container = document.getElementById('messages');
+            container.classList.remove('flex')
 
+            if(container.querySelector('.emptyMessage')){
+                const em = container.querySelector('.emptyMessage')
+                container.removeChild(em)
+            }
             if (socket) {
                 const payload = {
                     targetUserId: activeTargetUserId,
@@ -1234,6 +1538,7 @@
                     } : null
                 };
                 socket.emit('directMessage', payload);
+                
                 socket.emit('stopTyping', { targetUserId: activeTargetUserId });
             }
             
@@ -1243,8 +1548,12 @@
             document.getElementById('emoji-picker').classList.add('hidden');
         }
 
-        function toggleSidebar() {
-            hapticFeedback();
+        function toggleSidebar(auto) {
+            if(auto){
+            document.getElementById('sidebar-overlay').classList.add('hidden');
+            return;
+
+            }
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
             document.getElementById('sidebar-overlay').classList.toggle('hidden');
         }
@@ -1271,14 +1580,12 @@
         }
 
         function startCountdownUI() {
-            document.getElementById('session-countdown-wrapper').classList.remove('hidden');
             clearInterval(countdownTimer);
             updateTimerDisplay();
             countdownTimer = setInterval(updateTimerDisplay, 1000);
         }
 
         function stopCountdownUI() {
-            document.getElementById('session-countdown-wrapper').classList.add('hidden');
             clearInterval(countdownTimer);
         }
 
@@ -1304,13 +1611,20 @@
             const mins = Math.floor((diff % hourMs) / minuteMs);
             const secs = Math.floor((diff % minuteMs) / 1000);
         
-            document.getElementById("countdown-timer").innerText =
-                `${months}m ${days}d ${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+            
         }
 
         function changeIdentity() {
-            if (socket) socket.emit('requestNewIdentity');
+            if (socket) {
+                 const accept = confirm("Are you sure you want to change your Identity?")
+                 if(accept){
+                    socket.emit('requestNewIdentity')
+                    
+                }else{
+                    return
+                }
         }
+    }
 
         function updateMyIdentityUI() {
             document.getElementById('my-username').value = myUsername;
@@ -1376,6 +1690,19 @@
                 addSystemMessageUI("Media permission issue: " + err.message);
                 endActiveCall();
             }
+        }
+
+        function filterForwardUsers() {
+            const query = document
+                .getElementById("forward-search")
+                .value
+                .toLowerCase();
+        
+            document.querySelectorAll("#forward-users-list button").forEach(btn => {
+                const name = btn.querySelector(".font-medium").textContent.toLowerCase();
+        
+                btn.style.display = name.includes(query) ? "flex" : "none";
+            });
         }
 
         async function acceptIncomingCall() {
@@ -1577,9 +1904,8 @@
         document.addEventListener('DOMContentLoaded', ()=>{
             document.getElementById('blur-icon').className = blur ? "fa-solid fa-eye-slash text-brand-400" : "fa-solid fa-eye text-slate-500";
             document.getElementById("blur-text").innerText =
-                blur ? "Blur On" : "Blur Off";
-
-
+                blur ? "Blur On" : "Blur Off"; 
+                callStackOnce()    
         })
 
 
@@ -1614,6 +1940,8 @@
                 return;
             }
 
+           
+
             container.innerHTML = otherUsers.map(u => {
                 const isSelected = u.id === activeTargetUserId;
                 return `<div onclick="selectUserForChat('${u.id}')" class="flex items-center justify-between p-2.5 rounded cursor-pointer transition ${isSelected ? 'bg-brand-600/20 border border-brand-500/40 text-brand-300' : 'hover:bg-slate-800/60 text-slate-300'}">
@@ -1626,6 +1954,20 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
                 </div>`;
             }).join('');
+
+        
+            const storedLastUser = localStorage.getItem('last_user')
+            if(storedLastUser && !stack_used){
+            callStackOnce()
+            }
+        }
+        function callStackOnce(){
+            const storedLastUser = localStorage.getItem('last_user')
+
+            stack_used = true
+            selectUserForChat(`${storedLastUser}`, true)
+            
+            setTimeout(() =>{selectUserForChat(`${storedLastUser}`, true)}, 1000)
         }
 
         function toggleEmojiPicker() {
@@ -1700,6 +2042,27 @@
         if ("Notification" in window) {
             updateNotificationBtnUI(Notification.permission);
         }
+
+        history.pushState(null, "", location.href);
+
+        let lastBack = 0;
+        
+        window.addEventListener("popstate", () => {
+            const now = Date.now();
+        
+            if (now - lastBack < 2000) {
+                history.back();
+            } else {
+                lastBack = now;
+                history.pushState(null, "", location.href);
+                toast("Press back again to exit");
+            }
+        });
+window.addEventListener("beforeunload", (e) => {
+    e.preventDefault();
+    e.returnValue = "";
+});
+
     </script>
 </body>
 </html>

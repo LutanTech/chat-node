@@ -1,0 +1,10 @@
+{
+  "appId": "anon.chat.com",
+  "appName": "anonchat",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
+}

@@ -127,7 +127,8 @@ io.on("connection", (socket) => {
         socket.emit("sessionReady", {
             userId: currentUserId,
             name,
-            expiresAt: null
+            expiresAt: null,
+            oldName : oldName
         });
 
         io.emit("usersUpdate", Object.values(users));
@@ -300,6 +301,33 @@ io.on("connection", (socket) => {
                     io.to(targetUser.socketId).emit("messageDeleted", { targetUserId: currentUserId, msgId });
                 }
             }
+        }
+    });
+
+    socket.on("forwardMessage", ({ targetUserId, message }) => {
+
+        const chatKey = getChatKey(currentUserId, targetUserId);
+    
+        const forwarded = {
+            ...message,
+            id: Date.now() + Math.random().toString(36).slice(2,5),
+            userId: currentUserId,
+            targetUserId,
+            name,
+            forwarded: true,
+            time: Date.now(),
+            readBy: [],
+            reactions: {},
+            edited: false
+        };
+    
+        saveDirectMessage(chatKey, forwarded);
+    
+        socket.emit("directMessage", forwarded);
+    
+        const target = users[targetUserId];
+        if (target) {
+            io.to(target.socketId).emit("directMessage", forwarded);
         }
     });
 
