@@ -648,6 +648,7 @@
         let audioEnabled = true;
         let typingTimeout = null;
         let onlineUsers = [];
+        let chats = {};
         let messagesHistory = [];
         let unreadMessageIds = new Set();
         let selectedImageBase64 = null;
@@ -677,6 +678,7 @@
         let selectedForwardUsers = [];
         let lastUser = localStorage.getItem('last_user') || '';
         let stack_used = false
+        let unreadUsers = {};
 
         const RTC_CONFIG = {
             iceServers: [
@@ -888,22 +890,42 @@
             });
 
             socket.on('directHistoryLoaded', ({ targetUserId, history, pinned }) => {
+
+                (history || []).forEach(updateChat);
+            
                 if (targetUserId === activeTargetUserId) {
                     messagesHistory = history || [];
                     pinnedMsgId = pinned ? pinned.id : null;
                     updatePinnedBanner(pinned);
                     renderAllMessages();
                 }
+            
+                renderOnlineUsers();
             });
-
-            socket.on('directMessage', (msg) => {
-                if (msg.userId === myUserId || msg.userId === activeTargetUserId) {
-                    messagesHistory.push(msg);
+         
+            socket.on("directMessage", (msg) => {
+                updateChat(msg);
+                messagesHistory.push(msg);
+            
+                const otherUser =
+                    msg.userId === myUserId ? msg.targetUserId : msg.userId;
+            
+                if (otherUser === activeTargetUserId) {
                     addMessageUI(msg);
-                    if (msg.userId !== myUserId) playNotificationSound('message');
+            
+                    if (msg.userId !== myUserId) {
+                        socket.emit("markDirectRead", { targetUserId: otherUser });
+                    }
+                } else if (msg.userId !== myUserId) {
+                    unreadUsers[otherUser] = (unreadUsers[otherUser] || 0) + 1;
+                    renderOnlineUsers();
+                }
+            
+                if (msg.userId !== myUserId) {
+                    playNotificationSound("message");
                 }
             });
-
+          
             socket.on('messageUpdated', ({ msg }) => {
                 const idx = messagesHistory.findIndex(m => m.id === msg.id);
                 if (idx > -1) {
@@ -927,8 +949,21 @@
                 document.getElementById('user-count-badge').innerText = count;
             });
 
-            socket.on('usersUpdate', (users) => {
+            socket.on("usersUpdate", users => {
                 onlineUsers = users;
+
+            
+                Object.values(chats).forEach(chat => {
+                    const onlineUser = users.find(u => u.id === chat.id);
+            
+                    chat.online = !!onlineUser;
+            
+                    if (onlineUser) {
+                        chat.name = onlineUser.name;
+                    }
+                });
+
+            
                 renderOnlineUsers();
             });
 
@@ -992,8 +1027,35 @@
             });
         }
 
+        function updateChat(msg) {
+            const otherId =
+                msg.userId === myUserId
+                    ? msg.targetUserId
+                    : msg.userId;
+        
+            if (!chats[otherId]) {
+                chats[otherId] = {
+                    id: otherId,
+                    name: msg.userId === myUserId
+                        ? (onlineUsers.find(u => u.id === otherId)?.name || `You (${onlineUsers.find(u => u.id === myUserId)?.name})`)
+                        : msg.name,
+                    unread: 0,
+                    lastMessage: "",
+                    lastTime: 0,
+                    online: false
+                };
+            }
+        
+            chats[otherId].lastMessage = msg.image ? "📷 Photo" : msg.text;
+            chats[otherId].lastTime = msg.time;
+        
+            renderOnlineUsers();
+        }
+
         function selectUserForChat(targetUserId, auto=false) {
             activeTargetUserId = targetUserId;
+            delete unreadUsers[targetUserId];
+            renderOnlineUsers();
             const targetUser = onlineUsers.find(u => u.id === targetUserId);
 
             document.getElementById('empty-state-notice').classList.add('hidden');
@@ -1158,13 +1220,13 @@
                 container.classList.add('flex')
                 container.innerHTML = '<div class="emptyMessage flex-col" style="display:flex; gap:9px; align-items:center; justify-content:center;  margin:auto; margin-top:20%"> <i class="fas fa-message text-4xl text-slate-500"></i> <i class="text-sm text-slate-500"> Start Messaging </i></div>'
             }  else{
+                document.getElementById('messages').innerHTML = '';
+                document.getElementById('messages').classList.remove('flex');
             
                 messagesHistory.forEach(msg => {
                     addMessageUI(msg);
                 });
-                if(container.querySelector('.emptyMessage')){
-                    container.querySelector('.emptyMessage').innerHTML = ''
-                }
+            
             }
         }
 
@@ -1932,7 +1994,9 @@
 
         function renderOnlineUsers() {
             const container = document.getElementById('online-users-list');
-            const otherUsers = onlineUsers.filter(u => u.id !== myUserId);
+            const otherUsers = Object.values(onlineUsers).sort(
+                (a, b) => b.lastTime - a.lastTime
+            );
             document.getElementById('user-count-badge').innerText = otherUsers.length;
 
             if (otherUsers.length === 0) {
@@ -1951,7 +2015,19 @@
                         </div>
                         <span class="text-xs font-medium truncate">${escapeHTML(u.name)}</span>
                     </div>
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+                    <div class="flex items-center gap-2">
+                    ${
+                        unreadUsers[u.id]
+                            ? `<span class="min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+                                    ${unreadUsers[u.id] > 99 ? "99+" : unreadUsers[u.id]}
+                            </span>`
+                            : ""
+                    }
+                    ${
+                        u.online
+                            ? '<span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>'
+                            : '<span class="w-2 h-2 rounded-full bg-slate-500 shrink-0"></span>'
+                    }                </div>
                 </div>`;
             }).join('');
 
@@ -1961,6 +2037,7 @@
             callStackOnce()
             }
         }
+     
         function callStackOnce(){
             const storedLastUser = localStorage.getItem('last_user')
 
@@ -2011,6 +2088,7 @@
 
         function clearMessagesUI() {
             document.getElementById('messages').innerHTML = '';
+            localStorage.removeItem('last_user')
         }
 
         function scrollToBottom() {
