@@ -1,6 +1,6 @@
 {
-  "name": "chat-node",
-  "version": "1.0.0",
+  "name": "AnonChat",
+  "version": "1.0.9",
   "description": "Anonymous Chat & Live Calls",
   "main": "server.js",
   "scripts": {
