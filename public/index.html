@@ -64,7 +64,7 @@
     }
     </script>
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="scripts/tailwind.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -72,9 +72,9 @@
                 extend: {
                     colors: {
                         brand: {
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
+                            500: '#02883c',
+                            600: '#025928',
+                            700: '#013317',
                         }
                     },
                     fontFamily: {
@@ -114,6 +114,14 @@
             background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
+        }
+        #messages-container{
+            background-image: url(https://img.magnific.com/premium-vector/chat-time-chalk-drawing-design-doodle-vector-clip-art-set-elements-seamless-pattern-icons-speech-bubble-message-emoji-letter-gadget-white-monochrome-design-isolated-dark-background_153823-116.jpg?semt=ais_test_b&w=740&q=80);
+            background-color: rgba(2, 2, 39, 0.914);
+            background-blend-mode: multiply;
+            background-position: center;
+            background-repeat: repeat;
+            background-size: contain;
         }
 
         @keyframes popIn {
@@ -550,6 +558,7 @@
             </div>
         </div>
     </div>
+    
 
     <div id="edited-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-sm p-5 shadow-2xl flex flex-col gap-4 animate-pop-in">
@@ -567,6 +576,30 @@
             <div  class="gap-5 flex flex-col  ">
                 <div  class="text-sm">Edited From: <span  class="text-green-500"  id="edited-from">Loading</span></div> 
                 <div  class="text-sm">Edited At: <span  id="edited-at"  class="text-green-500"> 00:00:00 </span></div> 
+            </div>
+        </div>
+    </div>
+
+
+    <div id="link-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-sm p-5 shadow-2xl flex flex-col gap-4 animate-pop-in">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded bg-brand-500/20 text-brand-400 flex items-center justify-center text-sm font-bold">
+                        <i class="fa-solid fa-warning"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-100 text-base">Open <span id="link-span"></span></h3>
+                </div>
+                <button onclick="closeLinkModal()" class="p-1.5 text-slate-400 hover:text-slate-200 rounded bg-0000">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <h4 class="text-sm text-red-400">Open links from verified sources only</h4>
+
+            <div class="gap-5 flex mt-5 align-center justify-between">
+                <div  class="text-sm bg-red-500 py-2 px-5"><button id="cancel-link-btn"> <i class="fas fa-warning text-white-600"></i> Cancel </button></div>
+                <div   class="text-sm bg-green-500 py-2 px-5"><button id="proceed-link-btn"> <i class="fas fa-external-link"></i>  Proceed</button></div> 
+                 
             </div>
         </div>
     </div>
@@ -649,6 +682,7 @@
         let typingTimeout = null;
         let onlineUsers = [];
         let chats = {};
+        let allUsers = '';
         let messagesHistory = [];
         let unreadMessageIds = new Set();
         let selectedImageBase64 = null;
@@ -679,6 +713,7 @@
         let lastUser = localStorage.getItem('last_user') || '';
         let stack_used = false
         let unreadUsers = {};
+        let lastMessages = [];
 
         const RTC_CONFIG = {
             iceServers: [
@@ -693,7 +728,6 @@
         const avatarColors = [
             'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
             'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-            'bg-amber-500/20 text-amber-400 border-amber-500/30',
             'bg-rose-500/20 text-rose-400 border-rose-500/30',
             'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
             'bg-purple-500/20 text-purple-400 border-purple-500/30'
@@ -873,6 +907,8 @@
                 socket.emit('initSession', saved);
             });
 
+            loadUsers()
+
             socket.on('sessionReady', (data) => {
                 myUserId = data.userId;
                 myUsername = data.name;
@@ -902,6 +938,10 @@
             
                 renderOnlineUsers();
             });
+
+            socket.on("usersLoaded", ({ allUsers: users }) => {
+                allUsers = users;
+            });
          
             socket.on("directMessage", (msg) => {
                 updateChat(msg);
@@ -923,7 +963,9 @@
             
                 if (msg.userId !== myUserId) {
                     playNotificationSound("message");
-                }
+                } 
+
+
             });
           
             socket.on('messageUpdated', ({ msg }) => {
@@ -950,7 +992,6 @@
             });
 
             socket.on("usersUpdate", users => {
-                onlineUsers = users;
 
             
                 Object.values(chats).forEach(chat => {
@@ -967,6 +1008,18 @@
                 renderOnlineUsers();
             });
 
+            socket.on("onlineUpdate", (users) => {
+                onlineUsers = users;
+            });  
+
+            
+
+            setInterval(() =>{
+              socket.on("onlineUpdate", (users) => {
+                onlineUsers = users;
+            });  
+            }, 5000)
+
             socket.on('typing', ({ fromUserId, name }) => {
                 if (fromUserId === activeTargetUserId) {
                     const indicator = document.getElementById('typing-indicator');
@@ -974,6 +1027,10 @@
                     indicator.classList.remove('opacity-0');
                 }
             });
+
+            socket.on('lastMessages', ({ lastMessages: msgs })=>{
+                lastMessages = msgs
+            })
 
             socket.on('stopTyping', ({ fromUserId }) => {
                 if (fromUserId === activeTargetUserId) {
@@ -1027,6 +1084,9 @@
             });
         }
 
+        function loadUsers(){
+            socket.emit('loadUsers', {myUserId})
+        }
         function updateChat(msg) {
             const otherId =
                 msg.userId === myUserId
@@ -1056,11 +1116,31 @@
             activeTargetUserId = targetUserId;
             delete unreadUsers[targetUserId];
             renderOnlineUsers();
-            const targetUser = onlineUsers.find(u => u.id === targetUserId);
+            const targetUser = [...allUsers].find(u => u.id === targetUserId);
 
             document.getElementById('empty-state-notice').classList.add('hidden');
-            document.getElementById('header-chat-title').innerText = targetUser ? `@ ${targetUser.name}` : "Direct Message";
-            document.getElementById('header-status-badge').classList.remove('hidden');
+            document.getElementById('header-chat-title').innerText = targetUser ? `${targetUser.name}` : "Direct Message";
+            const dot = document.getElementById('header-status-badge')
+            var isOnline = onlineUsers.some(user => user?.id === targetUserId);
+
+           if(!isOnline){
+            dot.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+            Offline`
+            dot.classList.add('text-red-500')
+            dot.classList.remove('text-emerald-500')
+            dot.classList.add('bg-red-500/10')
+
+           } else{
+            dot.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            Online`
+            dot.classList.add('text-emerald-500')
+            dot.classList.remove('text-red-500')
+            dot.classList.remove('bg-red-500/10')
+
+           }
+            dot.classList.remove('hidden');
+
+
             document.getElementById('call-buttons-header').classList.remove('hidden');
             
             const msgInput = document.getElementById('msg-input');
@@ -1385,9 +1465,7 @@
                 <div class="max-w-[85%] sm:max-w-[70%] relative msg-bubble-wrapper">
                     ${actionsBarHTML}
                     <div class="flex items-center gap-2 mb-1 px-1 ${isMe ? 'justify-end' : 'justify-start'}">
-                        <span class="text-[11px] font-medium text-slate-400 ${isMe ? 'text-brand-400' : ''}">
-                            ${escapeHTML(isMe ? 'You' : data.name)}
-                        </span>
+                        
                         <span class="text-[10px] text-slate-500">${timeStr}</span>
                         ${statusIconHTML}
                     </div>
@@ -1432,6 +1510,25 @@
             document.getElementById("edited-at").textContent = editedAt || "Unknown";
         
             document.getElementById("edited-modal").classList.remove("hidden");
+        }
+
+        function openLink(link, type) {
+            document.getElementById("link-span").innerHTML = type + `<br> <i class='text-xs truncate text-blue-600 underline cursor-pointer'>(${link})<i>` || "Unknown url";
+            document.getElementById("link-modal").classList.remove("hidden");
+            document.getElementById("proceed-link-btn").setAttribute('onclick', `proceedWithLink(true, '${link}')`);
+            document.getElementById("cancel-link-btn").setAttribute('onclick',  `proceedWithLink(false, '${link}')`)
+        }
+
+        function closeLinkModal(){
+            document.getElementById('link-modal').classList.add('hidden');
+        }
+
+        function proceedWithLink(proceed, link){
+            if(proceed){
+                window.open(link)
+            } else{
+            document.getElementById("link-modal").classList.add("hidden");
+            }
         }
         
         function closeMessageEditedModal() {
@@ -1497,8 +1594,7 @@
             const list = document.getElementById("forward-users-list");
             list.innerHTML = "";
         
-            onlineUsers
-                .filter(u => u.id !== myUserId)
+            allUsers
                 .forEach(user => {
         
                     list.innerHTML += `
@@ -1599,6 +1695,7 @@
                         image: activeReplyMsg.image || null
                     } : null
                 };
+                
                 socket.emit('directMessage', payload);
                 
                 socket.emit('stopTyping', { targetUserId: activeTargetUserId });
@@ -1968,6 +2065,8 @@
             document.getElementById("blur-text").innerText =
                 blur ? "Blur On" : "Blur Off"; 
                 callStackOnce()    
+        loadUsers()
+
         })
 
 
@@ -1994,9 +2093,8 @@
 
         function renderOnlineUsers() {
             const container = document.getElementById('online-users-list');
-            const otherUsers = Object.values(onlineUsers).sort(
-                (a, b) => b.lastTime - a.lastTime
-            );
+
+            const otherUsers = allUsers;
             document.getElementById('user-count-badge').innerText = otherUsers.length;
 
             if (otherUsers.length === 0) {
@@ -2005,33 +2103,40 @@
             }
 
            
-
             container.innerHTML = otherUsers.map(u => {
                 const isSelected = u.id === activeTargetUserId;
-                return `<div onclick="selectUserForChat('${u.id}')" class="flex items-center justify-between p-2.5 rounded cursor-pointer transition ${isSelected ? 'bg-brand-600/20 border border-brand-500/40 text-brand-300' : 'hover:bg-slate-800/60 text-slate-300'}">
-                    <div class="flex items-center gap-2.5 overflow-hidden">
-                        <div class="w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 border ${getAvatarStyle(u.name)}">
-                            ${getAvatarIcon(u.name)}
-                        </div>
-                        <span class="text-xs font-medium truncate">${escapeHTML(u.name)}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                    ${
-                        unreadUsers[u.id]
-                            ? `<span class="min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
-                                    ${unreadUsers[u.id] > 99 ? "99+" : unreadUsers[u.id]}
-                            </span>`
-                            : ""
-                    }
-                    ${
-                        u.online
-                            ? '<span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>'
-                            : '<span class="w-2 h-2 rounded-full bg-slate-500 shrink-0"></span>'
-                    }                </div>
-                </div>`;
-            }).join('');
+                const isOnline = onlineUsers.some(user => user?.id === u.id);
+                const lastMessage = lastMessages.find(msg => msg?.to === u.id);
 
-        
+
+                return `
+                    <div onclick="selectUserForChat('${u.id}')" class="flex items-center justify-between p-2.5 rounded cursor-pointer transition ${isSelected ? 'bg-brand-600/20 border border-brand-500/40 text-brand-300' : 'hover:bg-slate-800/60 text-slate-300'}">
+                        <div class="flex items-center gap-2.5 overflow-hidden">
+                            <div class="w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 border ${getAvatarStyle(u.name)}">
+                                ${getAvatarIcon(u.name)}
+                            </div>
+                            <span class="text-xs font-medium truncate">${escapeHTML(u.name)}</span> <br> <span style="max-width:60%" class="text-xs text-slate-500 italic truncate">${lastMessage ? lastMessage.msg : 'Click to Message'}</span>
+                        </div>
+            
+                        <div class="flex items-center gap-2">
+                            ${
+                                unreadUsers[u.id]
+                                    ? `<span class="min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+                                        ${unreadUsers[u.id] > 99 ? "99+" : unreadUsers[u.id]}
+                                       </span>`
+                                    : ""
+                            }
+            
+                            ${
+                                isOnline
+                                    ? '<span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>'
+                                    : '<span class="w-2 h-2 rounded-full bg-slate-500 shrink-0"></span>'
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
             const storedLastUser = localStorage.getItem('last_user')
             if(storedLastUser && !stack_used){
             callStackOnce()
@@ -2089,6 +2194,8 @@
         function clearMessagesUI() {
             document.getElementById('messages').innerHTML = '';
             localStorage.removeItem('last_user')
+            activeTargetUserId = null;
+
         }
 
         function scrollToBottom() {
@@ -2097,6 +2204,7 @@
         }
 
         function getAvatarStyle(name) {
+            name = name || 'User'
             let hash = 0;
             for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
             return avatarColors[Math.abs(hash) % avatarColors.length];
@@ -2107,7 +2215,20 @@
         }
 
         function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+            const escaped = str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+            const urlRegex = /(\b(https?:\/\/|www\.)[^\s<]+)/gi;
+            const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
+
+            return escaped
+            .replace(urlRegex, url=>{
+                const href = url.startsWith('www.')?'https://' + url:url;
+                return `<a  onclick="openLink('${url}', 'Link')"  class="text-green-400 cursor-pointer underline hover:text-green-100 hover:underline"> ${url} </a>` 
+            })
+            .replace(emailRegex, email=>{
+                return  `<a onclick="openLink('mailto:${email}', 'Email')" class="text-green-400 cursor-pointer underline hover:text-green-100 hover:underline"> ${email} </a>` 
+
+            })
+
         }
 
         const input = document.getElementById('msg-input');

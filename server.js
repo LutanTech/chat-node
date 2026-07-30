@@ -1,4 +1,5 @@
 console.log("SERVER LOADED", new Date().toISOString());
+const { disconnect } = require("cluster");
 const express = require("express");
 const http = require("http");
 const path = require("path");
@@ -21,10 +22,12 @@ const animals = [
 ];
 
 const users = {};
+const allUsers = [];
+let onlineUsers = [];
 const directHistories = {};
 const pinnedMessages = {};
 const pendingDisconnects = {};
-const DISCONNECT_GRACE_MS = 25000;
+const DISCONNECT_GRACE_MS = 250;
 
 function randomName() {
     return animals[Math.floor(Math.random() * animals.length)] + "-" + Math.floor(1000 + Math.random() * 9000);
@@ -54,6 +57,7 @@ io.on("connection", (socket) => {
     let currentUserId = null;
     let name = "";
     let expiresAt = null;
+    let lastMessages = []
 
     socket.on("initSession", (clientSession) => {
         currentUserId = (clientSession && clientSession.userId) ? clientSession.userId : "usr_" + Math.random().toString(36).substring(2, 9);
@@ -84,14 +88,51 @@ io.on("connection", (socket) => {
             lastActive: Date.now()
         };
 
+
+        const userObj = {
+            id: currentUserId,
+            socketId: socket.id,
+            name,
+            expiresAt,
+            lastActive: Date.now()
+        };
+
+        allUsers.forEach(u=>{
+        const chatKey = getChatKey(currentUserId, u.id);
+        const history = directHistories[chatKey] || [];
+        const lastMessage = history.length > 0 ? history[history.length - 1].text || 'Attachment' : 'Click to Message'
+        const user = allUsers.find(u => u.id === u.id);
+
+        user.lastMessage = lastMessage
+        lastMessages.push({'msg':lastMessage, 'to':u.id})
+        })
+        
+        const existingUser = allUsers.find(u => u.id === userObj.id);
+        
+        if (existingUser) {
+            existingUser.lastActive = Date.now();
+            existingUser.name = name;
+        } else {
+            allUsers.push(userObj);
+        }
+
+
+        
         socket.emit("sessionReady", {
             userId: currentUserId,
             name,
             expiresAt
         });
 
-        io.emit("count", Object.keys(users).length);
-        io.emit("usersUpdate", Object.values(users));
+        if (!onlineUsers.some(u => u.id === currentUserId)) {
+            onlineUsers.push({ id: currentUserId });
+        }
+
+        io.emit("count", Object.keys(allUsers).length);
+        io.emit("usersUpdate", allUsers);
+        io.emit("onlineUpdate", onlineUsers);
+        io.emit("usersLoaded", {allUsers});
+        io.emit("lastMessages", {lastMessages});
     });
 
     socket.on("loadDirectHistory", ({ targetUserId }) => {
@@ -104,6 +145,13 @@ io.on("connection", (socket) => {
             targetUserId,
             history,
             pinned
+        });
+    });
+
+
+    socket.on("loadUsers", () => {
+        socket.emit("usersLoaded", {
+            allUsers
         });
     });
 
@@ -170,6 +218,8 @@ io.on("connection", (socket) => {
         const targetUser = users[targetUserId];
         if (targetUser) {
             io.to(targetUser.socketId).emit("directMessage", msg);
+            io.emit("lastMessages", {lastMessages});
+
         }
     });
 
@@ -395,16 +445,34 @@ io.on("connection", (socket) => {
         }
     });
 
+    setInterval(() =>{
+        io.emit("count", Object.keys(allUsers).length);
+        io.emit("usersUpdate", allUsers);
+        io.emit("onlineUpdate", onlineUsers);
+        io.emit("usersLoaded", {allUsers});
+    }, 5000)
+
     socket.on("disconnect", () => {
+        console.log('disconnecting...', currentUserId)
+
         if (!currentUserId) return;
 
         pendingDisconnects[currentUserId] = setTimeout(() => {
+        
+            onlineUsers = onlineUsers.filter(u => u.id !== currentUserId);
+        
             delete users[currentUserId];
             delete pendingDisconnects[currentUserId];
-
-            io.emit("count", Object.keys(users).length);
-            io.emit("usersUpdate", Object.values(users));
+                
+            io.emit("count", Object.keys(allUsers).length);
+            io.emit("usersUpdate", allUsers);
+            io.emit("onlineUpdate", onlineUsers);
+            io.emit("usersLoaded", {allUsers});
+        
+            console.log("Disconnected:", currentUserId);
         }, DISCONNECT_GRACE_MS);
+
+       
     });
 });
 
