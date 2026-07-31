@@ -6,7 +6,6 @@ const path = require("path");
 const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
-const fcmTokens = new Map();
 
 const io = new Server(server, {
     cors: { origin: "*" },
@@ -61,6 +60,41 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.use(express.json());
+
+app.post("/api/register-fcm", (req, res) => {
+
+    const { token, userId } = req.body;
+
+    if (!token || !userId) {
+        return res.status(400).json({
+            success: false,
+            message: "Missing token or userId"
+        });
+    }
+
+    if (!users[userId]) {
+        users[userId] = {
+            id: userId
+        };
+    }
+
+    users[userId].fcmToken = token;
+
+    const user = allUsers.find(u => u.id === userId);
+
+    if (user) {
+        user.fcmToken = token;
+    }
+
+    console.log(`FCM token saved for ${userId}`);
+
+    res.json({
+        success: true
+    });
+
 });
 
 
@@ -175,23 +209,6 @@ io.on("connection", (socket) => {
         io.emit("lastMessages", {lastMessages});
     });
 
-    socket.on("registerFCM", (token) => {
-
-        if (!currentUserId || !users[currentUserId]) {
-            return;
-        }
-    
-        users[currentUserId].fcmToken = token;
-    
-        const user = allUsers.find(u => u.id === currentUserId);
-    
-        if (user) {
-            user.fcmToken = token;
-        }
-    
-        console.log(`FCM registered for ${currentUserId}`);
-    
-    });
 
     socket.on("loadDirectHistory", ({ targetUserId }) => {
         if (!currentUserId || !targetUserId) return;
@@ -283,12 +300,12 @@ io.on("connection", (socket) => {
 
         socket.emit("directMessage", msg);
 
-        const token = fcmTokens.get(targetUserId);
+        const targetUser = users[targetUserId];
 
-        if (token) {
+        if (targetUser?.fcmToken) {
 
             await sendPushNotification(
-                token,
+                targetUser.fcmToken,
                 name,
                 text || "Attachment",
                 {
@@ -299,7 +316,6 @@ io.on("connection", (socket) => {
 
         }
 
-        const targetUser = users[targetUserId];
         if (targetUser) {
             io.to(targetUser.socketId).emit("directMessage", msg);
             io.emit("lastMessages", {lastMessages});
