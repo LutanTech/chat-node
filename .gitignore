@@ -3,3 +3,4 @@ node_modules
 capacit
 package-lock.json
 ./package-lock.json
+public/firebase-admin.json
