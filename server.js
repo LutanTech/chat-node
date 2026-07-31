@@ -73,12 +73,15 @@ async function sendPushNotification(token, title, body, data = {}) {
 
             token,
 
-            notification: {
+            data: {
                 title,
-                body
+                body,
+                ...data
             },
 
-            data
+            android: {
+                priority: "high"
+            }
 
         });
 

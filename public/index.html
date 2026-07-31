@@ -924,19 +924,20 @@
             loadUsers()
 
             window.onFCMToken = function(token) {
-                console.log("FCM:", token);
-            
+
                 socket.emit("registerFCM", token);
             };
             
-            if (window.Android) {
-                Android.getFCMToken();
-            }
+            
 
             socket.on('sessionReady', (data) => {
                 myUserId = data.userId;
                 myUsername = data.name;
                 expiresAt = data.expiresAt;
+
+                if (window.Android) {
+                    Android.getFCMToken(currentUserId);
+                }
                 
                 saveSessionLocally({ userId: myUserId, name: myUsername, expiresAt });
                 updateMyIdentityUI();
