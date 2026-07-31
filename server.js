@@ -298,6 +298,8 @@ io.on("connection", (socket) => {
 
         saveDirectMessage(chatKey, msg);
 
+        console.log('message sending', msg)
+
         socket.emit("directMessage", msg);
 
         const targetUser = users[targetUserId];
