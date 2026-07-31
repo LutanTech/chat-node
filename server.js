@@ -1,4 +1,4 @@
-console.log("SERVER LOADED", new Date().toISOString());
+log("SERVER LOADED", new Date().toISOString());
 const { disconnect } = require("cluster");
 const express = require("express");
 const http = require("http");
@@ -6,6 +6,21 @@ const path = require("path");
 const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
+const fs = require("fs");
+const path = require("path");
+
+const logFile = path.join(__dirname, "server.log");
+
+function log(message, data = null) {
+    const line =
+        `[${new Date().toISOString()}] ${message}` +
+        (data ? ` ${JSON.stringify(data)}` : "") +
+        "\n";
+
+    fs.appendFile(logFile, line, err => {
+        if (err) log("errorrrrrrrrr" + err);
+    });
+}
 
 const io = new Server(server, {
     cors: { origin: "*" },
@@ -89,7 +104,7 @@ app.post("/api/register-fcm", (req, res) => {
         user.fcmToken = token;
     }
 
-    console.log(`FCM token saved for ${userId}`);
+   log(`FCM token saved for ${userId}`);
 
     res.json({
         success: true
@@ -119,11 +134,11 @@ async function sendPushNotification(token, title, body, data = {}) {
 
         });
 
-        console.log("Push sent");
+        log("Push sent");
 
     } catch (err) {
 
-        console.error(err);
+        log("errorrrrrrrrr" + err);
 
     }
 
@@ -298,7 +313,7 @@ io.on("connection", (socket) => {
 
         saveDirectMessage(chatKey, msg);
 
-        console.log('message sending', msg)
+        log('message sending', msg)
 
         socket.emit("directMessage", msg);
 
@@ -578,7 +593,7 @@ io.on("connection", (socket) => {
 
 
     socket.on("disconnect", () => {
-        console.log('disconnecting...', currentUserId)
+        log('disconnecting...', currentUserId)
 
         if (!currentUserId) return;
 
@@ -591,7 +606,7 @@ io.on("connection", (socket) => {
 
             broadcastUsers();
         
-            console.log("Disconnected:", currentUserId);
+            log("Disconnected:", currentUserId);
         }, DISCONNECT_GRACE_MS);
 
        
@@ -607,5 +622,5 @@ function broadcastUsers() {
 
 const PORT = process.env.PORT || 9000;
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server listening on port ${PORT}`);
+    log(`Server listening on port ${PORT}`);
 });

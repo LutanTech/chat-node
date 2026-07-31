@@ -911,15 +911,14 @@
                 initIntersectionObserver();
                 const saved = loadSavedSession();
                 socket.emit('initSession', saved);
+                hideOfflineBanner();
+
             });
 
-            if (!navigator.onLine) {
-                showOfflineBanner("No internet connection");
-            } else if (!socket.connected) {
+            socket.on("connect_error", () => {
                 showOfflineBanner("Reconnecting to server...");
-            } else {
-                hideOfflineBanner();
-            }
+            });
+
 
             loadUsers()
 
@@ -936,7 +935,7 @@
                 expiresAt = data.expiresAt;
 
                 if (window.Android) {
-                    Android.getFCMToken(currentUserId);
+                    Android.getFCMToken(myUserId);
                 }
                 
                 saveSessionLocally({ userId: myUserId, name: myUsername, expiresAt });
