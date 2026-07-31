@@ -4,15 +4,25 @@ const express = require("express");
 const http = require("http");
 const path = require("path");
 const { Server } = require("socket.io");
-
 const app = express();
 const server = http.createServer(app);
+const fcmTokens = new Map();
 
 const io = new Server(server, {
     cors: { origin: "*" },
     maxHttpBufferSize: 1e7,
     pingInterval: 10000,
     pingTimeout: 20000
+});
+
+const { initializeApp, cert } = require("firebase-admin/app");
+
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./public/firebase-admin.json");
+
+initializeApp({
+    credential: cert(serviceAccount)
 });
 
 const animals = [
@@ -53,6 +63,35 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+
+
+async function sendPushNotification(token, title, body, data = {}) {
+
+    try {
+
+        await admin.messaging().send({
+
+            token,
+
+            notification: {
+                title,
+                body
+            },
+
+            data
+
+        });
+
+        console.log("Push sent");
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+}
+
 io.on("connection", (socket) => {
     let currentUserId = null;
     let name = "";
@@ -75,6 +114,7 @@ io.on("connection", (socket) => {
         } else if (users[currentUserId] && users[currentUserId].name) {
             name = users[currentUserId].name;
             expiresAt = users[currentUserId].expiresAt;
+            broadcastUsers();
         } else {
             name = randomName();
             expiresAt = null;
@@ -128,11 +168,26 @@ io.on("connection", (socket) => {
             onlineUsers.push({ id: currentUserId });
         }
 
-        io.emit("count", Object.keys(allUsers).length);
-        io.emit("usersUpdate", allUsers);
-        io.emit("onlineUpdate", onlineUsers);
-        io.emit("usersLoaded", {allUsers});
+        broadcastUsers();
         io.emit("lastMessages", {lastMessages});
+    });
+
+    socket.on("registerFCM", (token) => {
+
+        if (!currentUserId || !users[currentUserId]) {
+            return;
+        }
+    
+        users[currentUserId].fcmToken = token;
+    
+        const user = allUsers.find(u => u.id === currentUserId);
+    
+        if (user) {
+            user.fcmToken = token;
+        }
+    
+        console.log(`FCM registered for ${currentUserId}`);
+    
     });
 
     socket.on("loadDirectHistory", ({ targetUserId }) => {
@@ -156,10 +211,20 @@ io.on("connection", (socket) => {
     });
 
     socket.on("updateSession", (data) => {
-        expiresAt = data ? data.expiresAt : null;
-        if (currentUserId && users[currentUserId]) {
-            users[currentUserId].expiresAt = expiresAt;
+    
+        expiresAt = data.expiresAt;
+    
+        if (currentUserId && allUsers[currentUserId]) {
+            allUsers[currentUserId].expiresAt = data.expiresAt;
+            users[currentUserId].expiresAt = data.expiresAt;
+    
+            if (data.newName) {
+                allUsers[currentUserId].name = data.newName;
+                users[currentUserId].name = data.newName;
+            }
         }
+    
+        broadcastUsers();
     });
 
     socket.on("requestNewIdentity", () => {
@@ -179,10 +244,10 @@ io.on("connection", (socket) => {
             oldName : oldName
         });
 
-        io.emit("usersUpdate", Object.values(users));
+        broadcastUsers();
     });
 
-    socket.on("directMessage", (payload) => {
+    socket.on("directMessage", async(payload) => {
         if (!payload || !payload.targetUserId) return;
         const targetUserId = payload.targetUserId;
         const text = typeof payload === 'string' ? payload.trim() : (payload.text || '').trim();
@@ -214,6 +279,22 @@ io.on("connection", (socket) => {
         saveDirectMessage(chatKey, msg);
 
         socket.emit("directMessage", msg);
+
+        const token = fcmTokens.get(targetUserId);
+
+        if (token) {
+
+            await sendPushNotification(
+                token,
+                name,
+                text || "Attachment",
+                {
+                    type: "message",
+                    userId: currentUserId
+                }
+            );
+
+        }
 
         const targetUser = users[targetUserId];
         if (targetUser) {
@@ -354,7 +435,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("forwardMessage", ({ targetUserId, message }) => {
+    socket.on("forwardMessage", async({ targetUserId, message }) => {
 
         const chatKey = getChatKey(currentUserId, targetUserId);
     
@@ -379,9 +460,22 @@ io.on("connection", (socket) => {
         if (target) {
             io.to(target.socketId).emit("directMessage", forwarded);
         }
+        if (target?.fcmToken) {
+
+            await sendPushNotification(
+                target.fcmToken,
+                name,
+                text || "Attachment",
+                {
+                    type: "message",
+                    userId: currentUserId
+                }
+            );
+        
+        }
     });
 
-    socket.on("callUser", (data) => {
+    socket.on("callUser",  async(data) => {
         const targetUser = users[data.targetUserId];
         if (targetUser) {
             io.to(targetUser.socketId).emit("incomingCall", {
@@ -391,6 +485,22 @@ io.on("connection", (socket) => {
                 callType: data.callType,
                 signal: data.signal
             });
+            const token = fcmTokens.get(data.targetUserId);
+
+            if (token) {
+
+                await sendPushNotification(
+                    token,
+                    "Incoming Call",
+                    data.callerName,
+                    {
+                        type: "call",
+                        caller: data.callerName,
+                        userId: currentUserId
+                    }
+                );
+
+            }
         }
     });
 
@@ -445,12 +555,6 @@ io.on("connection", (socket) => {
         }
     });
 
-    setInterval(() =>{
-        io.emit("count", Object.keys(allUsers).length);
-        io.emit("usersUpdate", allUsers);
-        io.emit("onlineUpdate", onlineUsers);
-        io.emit("usersLoaded", {allUsers});
-    }, 5000)
 
     socket.on("disconnect", () => {
         console.log('disconnecting...', currentUserId)
@@ -463,11 +567,8 @@ io.on("connection", (socket) => {
         
             delete users[currentUserId];
             delete pendingDisconnects[currentUserId];
-                
-            io.emit("count", Object.keys(allUsers).length);
-            io.emit("usersUpdate", allUsers);
-            io.emit("onlineUpdate", onlineUsers);
-            io.emit("usersLoaded", {allUsers});
+
+            broadcastUsers();
         
             console.log("Disconnected:", currentUserId);
         }, DISCONNECT_GRACE_MS);
@@ -475,6 +576,13 @@ io.on("connection", (socket) => {
        
     });
 });
+
+function broadcastUsers() {
+    io.emit("count", Object.keys(allUsers).length);
+    io.emit("usersUpdate", allUsers);
+    io.emit("onlineUpdate", onlineUsers);
+    io.emit("usersLoaded", { allUsers });
+}
 
 const PORT = process.env.PORT || 9000;
 server.listen(PORT, "0.0.0.0", () => {

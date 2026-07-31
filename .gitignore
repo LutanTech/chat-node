@@ -1,4 +1,5 @@
 node_modules
 /node_modules
+capacit
 package-lock.json
-/package-lock.json
+./package-lock.json

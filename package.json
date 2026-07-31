@@ -1,6 +1,6 @@
 {
   "name": "AnonChat",
-  "version": "1.0.9",
+  "version": "1.0.8",
   "description": "Anonymous Chat & Live Calls",
   "main": "server.js",
   "scripts": {
@@ -11,6 +11,7 @@
     "@capacitor/core": "^8.4.2",
     "@capacitor/ios": "^8.4.2",
     "express": "^4.19.2",
+    "firebase-admin": "^14.2.0",
     "socket.io": "^4.7.5"
   },
   "devDependencies": {

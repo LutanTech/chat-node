@@ -153,6 +153,12 @@
 </head>
 <body class="app-height flex flex-col font-sans antialiased bg-slate-950 overflow-hidden">
 
+    <div id="offline-banner"
+    class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50
+           bg-red-600 text-white px-2 py-2 shadow-lg text-xs">
+           <i id="network-icon" class="fas fa-wifi text-green-500"></i>
+            <span>No internet connection</span>
+</div>
     <div class="flex h-full w-full overflow-hidden bg-slate-950 relative">
 
         <!-- Mobile Drawer Backdrop -->
@@ -184,7 +190,7 @@
                         </div>
                         <div class="truncate">
                             <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Your Identity</div>
-                            <input id="my-username" class="text-sm bg-[#0000] outline-none font-semibold text-slate-100 truncate" value="Connecting..." oninput="extendSession()">
+                            <input id="my-username" class="text-sm bg-[#0000] outline-none font-semibold text-slate-100 truncate" value="Connecting..." onblur="extendSession()">
                         </div>
                     </div>
                     <button onclick="changeIdentity()" title="Generate New Identity" class="p-2 text-slate-400 hover:text-brand-400 hover:bg-slate-700/60 rounded transition">
@@ -907,7 +913,25 @@
                 socket.emit('initSession', saved);
             });
 
+            if (!navigator.onLine) {
+                showOfflineBanner("No internet connection");
+            } else if (!socket.connected) {
+                showOfflineBanner("Reconnecting to server...");
+            } else {
+                hideOfflineBanner();
+            }
+
             loadUsers()
+
+            window.onFCMToken = function(token) {
+                console.log("FCM:", token);
+            
+                socket.emit("registerFCM", token);
+            };
+            
+            if (window.Android) {
+                Android.getFCMToken();
+            }
 
             socket.on('sessionReady', (data) => {
                 myUserId = data.userId;
@@ -923,6 +947,7 @@
                     stopCountdownUI();
                 }
                 toggleKeepSession(true)
+                hideOfflineBanner()
             });
 
             socket.on('directHistoryLoaded', ({ targetUserId, history, pinned }) => {
@@ -941,6 +966,10 @@
 
             socket.on("usersLoaded", ({ allUsers: users }) => {
                 allUsers = users;
+            });
+
+            socket.on("disconnect", () => {
+                showOfflineBanner("Disconnected from server");
             });
          
             socket.on("directMessage", (msg) => {
@@ -1013,12 +1042,6 @@
             });  
 
             
-
-            setInterval(() =>{
-              socket.on("onlineUpdate", (users) => {
-                onlineUsers = users;
-            });  
-            }, 5000)
 
             socket.on('typing', ({ fromUserId, name }) => {
                 if (fromUserId === activeTargetUserId) {
@@ -1734,8 +1757,44 @@
         function extendSession() {
             expiresAt = Date.now() + SESSION_DURATION;
             saveSessionLocally({ userId: myUserId, name:  document.getElementById('my-username').value  || myUsername, expiresAt });
-            if (socket) socket.emit('updateSession', { expiresAt });
+            const newName = document.getElementById('my-username').value
+            const payload ={
+                expiresAt,
+                newName
+            }
+            if (socket) socket.emit('updateSession', payload);
+            console.log(payload)
             startCountdownUI();
+        }
+
+        function checkSocket() {
+            if (socket.connected) {
+                console.log("Connected");
+                hideOfflineBanner();
+            } else {
+                console.log("Disconnected");
+                showOfflineBanner("Reconnecting to server...");
+            }
+        }
+
+        function showOfflineBanner(message = "No internet connection") {
+            const banner = document.getElementById("offline-banner");
+            if (!banner) return;
+        
+            banner.querySelector('span').innerHTML = message;
+            banner.classList.remove("hidden");
+
+            const icon = document.getElementById("network-icon");
+            icon.className = "fas fa-wifi text-red-200";
+        }
+        
+        function hideOfflineBanner() {
+            const banner = document.getElementById("offline-banner");
+            if (!banner) return;
+            const icon = document.getElementById("network-icon");
+            icon.className = "fas fa-wifi text-green-500";
+        
+            banner.classList.add("hidden");
         }
 
         function startCountdownUI() {
